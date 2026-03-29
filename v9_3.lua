@@ -1,9 +1,9 @@
 --[[ 
-   GALAXY PREMIUM v10.4 - UNSTOPPABLE SPEED
-   - Loop Speed: Duy trì tốc độ kể cả khi bị stun, ragdoll hoặc bị đánh.
-   - Auto Block: Bản v10.3 hoàn hảo (không block idle/block của đối thủ).
-   - Smart Aim: Quét toàn màn hình, ưu tiên người gần nhất.
-   - ESP: Hiển thị Pro, mượt mà cho Samsung A32.
+   GALAXY PREMIUM v10.5 - THE COMPLETE PERFECTION
+   - Fix: Thêm nút Bật/Tắt (Toggle) Menu cực tiện lợi.
+   - Speed: Loop Speed bất chấp Ragdoll/Stun/Bị đánh (v10.4).
+   - Auto Block: Thông minh, không block bừa bãi, không block người đang thủ.
+   - ESP & Aim: Chuẩn xác, mượt mà cho Mobile.
 ]]
 
 local Players = game:GetService("Players")
@@ -12,7 +12,7 @@ local RS = game:GetService("RunService")
 local VIM = game:GetService("VirtualInputManager")
 local Camera = workspace.CurrentCamera
 
--- Dọn dẹp UI
+-- Dọn dẹp UI cũ
 local function Cleanup()
     for _, ui in pairs(LP.PlayerGui:GetChildren()) do
         if ui.Name:find("Galaxy") then ui:Destroy() end
@@ -21,20 +21,36 @@ end
 Cleanup()
 
 local G = Instance.new("ScreenGui", LP.PlayerGui)
-G.Name = "GalaxyV10_4"
+G.Name = "GalaxyV10_5"
 G.ResetOnSpawn = false
 
 local NeonRed = Color3.fromRGB(255, 0, 0)
 local Dark = Color3.fromRGB(15, 15, 15)
 
--- MENU UI
+-- [MỚI] NÚT BẬT/TẮT MENU
 local Main = Instance.new("Frame", G)
 Main.Size, Main.Position = UDim2.new(0, 180, 0, 380), UDim2.new(0.5, -90, 0.5, -190)
 Main.BackgroundColor3, Main.Active, Main.Draggable = Dark, true, true
+Main.Visible = true -- Mặc định hiện khi mới chạy
 Instance.new("UIStroke", Main).Color = NeonRed
 
+local ToggleBtn = Instance.new("TextButton", G)
+ToggleBtn.Name = "ToggleGalaxy"
+ToggleBtn.Size = UDim2.new(0, 60, 0, 30)
+ToggleBtn.Position = UDim2.new(0, 10, 0.5, -15) -- Nằm bên trái màn hình
+ToggleBtn.BackgroundColor3 = Dark
+ToggleBtn.TextColor3 = NeonRed
+ToggleBtn.Text = "MENU"
+ToggleBtn.Font = Enum.Font.SourceSansBold
+ToggleBtn.TextSize = 14
+Instance.new("UIStroke", ToggleBtn).Color = NeonRed
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    Main.Visible = not Main.Visible
+end)
+
 local Title = Instance.new("TextLabel", Main)
-Title.Size, Title.Text = UDim2.new(1, 0, 0, 30), "GALAXY v10.4"
+Title.Size, Title.Text = UDim2.new(1, 0, 0, 30), "GALAXY v10.5"
 Title.BackgroundColor3, Title.TextColor3, Title.Font = NeonRed, Color3.new(1,1,1), Enum.Font.SourceSansBold
 
 local function createBtn(txt, pos, func)
@@ -53,19 +69,20 @@ local function createBtn(txt, pos, func)
 end
 
 -- =========================================
--- [1] UNSTOPPABLE LOOP SPEED (NEW)
+-- [1] UNSTOPPABLE LOOP SPEED (v10.4)
 -- =========================================
 _G.SpeedValue = 16
 RS.Stepped:Connect(function()
     pcall(function()
         if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-            -- Ép tốc độ liên tục bất kể trạng thái ragdoll hay bị đánh
             LP.Character.Humanoid.WalkSpeed = _G.SpeedValue
         end
     end)
 end)
 
--- [2] AUTO BLOCK (BẢN V10.3 HOÀN HẢO)
+-- =========================================
+-- [2] PRECISION AUTO BLOCK (v10.3)
+-- =========================================
 _G.AutoBlock = false
 local isHoldingF = false
 local IgnoreAnims = {"emoji", "dance", "emote", "rest", "idle", "walk", "run", "fall", "jump", "block", "guard", "hold"}
@@ -119,7 +136,9 @@ RS.RenderStepped:Connect(function()
     end
 end)
 
+-- =========================================
 -- [3] SMART AIM & [4] PRO ESP
+-- =========================================
 createBtn("SMART AIM", 0, function(on)
     _G.Aim = on
     task.spawn(function()
@@ -181,7 +200,7 @@ end)
 
 createBtn("AUTO BLOCK", 105, function(on) _G.AutoBlock = on end)
 
--- SPEED BOX (CẬP NHẬT BIẾN TOÀN CỤC)
+-- SPEED BOX
 local I = Instance.new("TextBox", Main)
 I.Size, I.Position, I.Text = UDim2.new(1, -40, 0, 30), UDim2.new(0, 20, 0, 185), "16"
 I.BackgroundColor3, I.TextColor3 = Color3.fromRGB(40,40,40), NeonRed
