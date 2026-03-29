@@ -30,7 +30,7 @@ local Stroke = Instance.new("UIStroke", Main); Stroke.Color = NeonRed; Stroke.Th
 
 local Title = Instance.new("TextLabel", Main)
 Title.Size = UDim2.new(1, 0, 0, 40); Title.BackgroundColor3 = NeonRed
-Title.Text = "GALAXY v16.0 - LeDangKhoi"; Title.TextColor3 = Color3.new(1,1,1)
+Title.Text = "GALAXY Premium - LeDangKhoi"; Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.SourceSansBold; Title.TextSize = 16
 
 -- NÚT BẬT/TẮT MENU (GALAXY BUTTON)
