@@ -1,8 +1,9 @@
 --[[ 
-   GALAXY PREMIUM v9.9 - GOD REFLEX
-   - Tốc độ: Phản xạ gần như 0s với RenderStepped.
-   - Surprise Guard: Chống úp sọt, chặn M1/Dash ngay khi vừa chạm.
-   - Pro Logic: Không block đòn 4 M1, không block Emoji/Move.
+   GALAXY PREMIUM v10.0 - FINAL PRECISION
+   - Fix: Chỉ block khi có đòn đánh thực sự (M1/Skill) hoặc Dash trực diện.
+   - Fix: Không còn tự động block khi đối thủ chỉ chạy xung quanh.
+   - Reflex: Giữ nguyên tốc độ phản xạ 0s của v9.9.
+   - ESP & AIM: Giữ nguyên bản cũ hoàn hảo.
 ]]
 
 local Players = game:GetService("Players")
@@ -17,7 +18,7 @@ for _, ui in pairs(LP.PlayerGui:GetChildren()) do
 end
 
 local G = Instance.new("ScreenGui", LP.PlayerGui)
-G.Name = "GalaxyV9_9"
+G.Name = "GalaxyV10"
 G.ResetOnSpawn = false
 
 local NeonRed = Color3.fromRGB(255, 0, 0)
@@ -30,7 +31,7 @@ Main.BackgroundColor3, Main.Active, Main.Draggable = Dark, true, true
 Instance.new("UIStroke", Main).Color = NeonRed
 
 local Title = Instance.new("TextLabel", Main)
-Title.Size, Title.Text = UDim2.new(1, 0, 0, 30), "GALAXY v9.9"
+Title.Size, Title.Text = UDim2.new(1, 0, 0, 30), "GALAXY v10.0"
 Title.BackgroundColor3, Title.TextColor3, Title.Font = NeonRed, Color3.new(1,1,1), Enum.Font.SourceSansBold
 
 local OpenBtn = Instance.new("TextButton", G)
@@ -54,47 +55,46 @@ local function createBtn(txt, pos, func)
 end
 
 -- =========================================
--- [1] GOD REFLEX AUTO BLOCK v9.9
+-- [1] PRECISION AUTO BLOCK v10.0
 -- =========================================
 _G.AutoBlock = false
 local isHoldingF = false
 local IgnoreAnims = {"emoji", "dance", "emote", "rest", "idle", "walk", "run", "fall", "jump"}
 
--- Dùng RenderStepped để đạt tốc độ phản xạ tối đa
 RS.RenderStepped:Connect(function()
     if _G.AutoBlock and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
         local shouldBlock = false
-        local myPos = LP.Character.HumanoidRootPart.Position
+        local myHRP = LP.Character.HumanoidRootPart
         
         pcall(function()
             for _, v in pairs(Players:GetPlayers()) do
                 if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
                     local targetHRP = v.Character.HumanoidRootPart
-                    local dist = (myPos - targetHRP.Position).Magnitude
+                    local dist = (myHRP.Position - targetHRP.Position).Magnitude
                     
-                    -- CHẶN DASH (Lướt thẳng úp sọt)
-                    if dist <= 22 and targetHRP.Velocity.Magnitude > 48 then
-                        shouldBlock = true
-                    end
+                    if dist <= 18 then
+                        -- KIỂM TRA HƯỚNG LAO TỚI (Phải lao về phía mình mới block)
+                        local dotProduct = (targetHRP.Position - myHRP.Position).Unit:Dot(targetHRP.Velocity.Unit)
+                        local isDashingAtMe = (targetHRP.Velocity.Magnitude > 50 and dotProduct < -0.7)
 
-                    -- CHẶN ANIMATION (Đòn đánh M1 và Skill)
-                    if dist <= 16 and not shouldBlock then
-                        local anim = v.Character.Humanoid:FindFirstChildOfClass("Animator")
-                        if anim then
-                            for _, t in pairs(anim:GetPlayingAnimationTracks()) do
-                                if t.IsPlaying then
-                                    local n = t.Animation.Name:lower()
-                                    
-                                    -- Lọc bỏ rác (Emoji/Move)
-                                    local isIgnore = false
-                                    for _, word in pairs(IgnoreAnims) do if n:find(word) then isIgnore = true break end end
-                                    
-                                    -- Thả đòn 4 M1 (Quan trọng để không bị kẹt combo)
-                                    local isM1_4 = n:find("final") or n:find("hit4") or n:find("last") or n:find("combo4")
-                                    
-                                    -- PHẢN XẠ TỨC THÌ: Chỉ cần đòn đánh vừa bắt đầu (Time < 0.2s)
-                                    if not isIgnore and not isM1_4 and (t.TimePosition < 0.22 or t.WeightCurrent > 0.5) then
-                                        shouldBlock = true; break
+                        if isDashingAtMe then
+                            shouldBlock = true
+                        else
+                            -- KIỂM TRA ANIMATION CHẶT CHẼ
+                            local anim = v.Character.Humanoid:FindFirstChildOfClass("Animator")
+                            if anim then
+                                for _, t in pairs(anim:GetPlayingAnimationTracks()) do
+                                    if t.IsPlaying then
+                                        local n = t.Animation.Name:lower()
+                                        local isIgnore = false
+                                        for _, word in pairs(IgnoreAnims) do if n:find(word) then isIgnore = true break end end
+                                        
+                                        local isM1_4 = n:find("final") or n:find("hit4") or n:find("last") or n:find("combo4")
+                                        
+                                        -- Chỉ block khi có trọng số đòn đánh cao (Weight) và không phải đòn 4
+                                        if not isIgnore and not isM1_4 and (t.WeightCurrent > 0.75 or (t.TimePosition < 0.2 and t.WeightCurrent > 0.3)) then
+                                            shouldBlock = true; break
+                                        end
                                     end
                                 end
                             end
@@ -105,7 +105,6 @@ RS.RenderStepped:Connect(function()
             end
         end)
         
-        -- Thực thi nhấn/thả phím F siêu tốc
         if shouldBlock and not isHoldingF then
             isHoldingF = true
             VIM:SendKeyEvent(true, Enum.KeyCode.F, false, game)
@@ -117,7 +116,7 @@ RS.RenderStepped:Connect(function()
 end)
 
 -- =========================================
--- [2] CÁC TÍNH NĂNG SMART AIM & ESP
+-- [2] SMART AIM & PRO ESP (HOÀN HẢO - GIỮ NGUYÊN)
 -- =========================================
 createBtn("SMART AIM", 0, function(on)
     _G.Aim = on
@@ -180,7 +179,6 @@ end)
 
 createBtn("AUTO BLOCK", 105, function(on) _G.AutoBlock = on end)
 
--- SPEED BOX
 local I = Instance.new("TextBox", Main)
 I.Size, I.Position, I.Text = UDim2.new(1, -40, 0, 30), UDim2.new(0, 20, 0, 185), "16"
 I.BackgroundColor3, I.TextColor3 = Color3.fromRGB(40,40,40), NeonRed
