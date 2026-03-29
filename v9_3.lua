@@ -1,7 +1,7 @@
 --[[ 
-   GALAXY PREMIUM by LeDangKhoi v12.0
-   - Fix Auto Block: Giải quyết triệt để lỗi kẹt Block ở cự ly 1-3 studs.
-   - Mechanism: Deadzone Logic (Tự động nhả Block khi không có đòn đánh thực sự).
+   GALAXY PREMIUM by LeDangKhoi v12.1
+   - Fix Vĩnh Viễn: Không còn kẹt Block ở cự ly gần (1-4 studs).
+   - Logic: Ưu tiên tấn công, ép nhả Block liên tục khi áp sát.
    - Smart Aim: Infinite Range FOVC (Khóa mục tiêu xa theo tâm màn hình).
    - Speed: Unstoppable (Chống Ragdoll/Stun).
 ]]
@@ -12,7 +12,7 @@ local RS = game:GetService("RunService")
 local VIM = game:GetService("VirtualInputManager")
 local Camera = workspace.CurrentCamera
 
--- XÓA UI CŨ
+-- DỌN DẸP UI
 for _, v in pairs(LP.PlayerGui:GetChildren()) do
     if v.Name == "GalaxyKhoi" then v:Destroy() end
 end
@@ -48,7 +48,7 @@ _G.Speed = 16; _G.Fly = false; _G.AutoBlock = false; _G.Aim = false; _G.ESP = fa
 local Ignore = {"idle", "walk", "run", "jump", "fall", "dance", "emote"}
 
 -- =========================================
--- HỆ THỐNG XỬ LÝ MASTER v12.0
+-- HỆ THỐNG XỬ LÝ MASTER v12.1
 -- =========================================
 RS.Heartbeat:Connect(function()
     pcall(function()
@@ -66,7 +66,7 @@ RS.Heartbeat:Connect(function()
                     local hrp = v.Character.HumanoidRootPart
                     local dist = (myHRP.Position - hrp.Position).Magnitude
                     
-                    -- A. INFINITE SNIPER AIM (FOVC)
+                    -- A. SMART AIM (FOVC Infinite)
                     if _G.Aim and v.Character.Humanoid.Health > 0 then
                         local screenPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
                         if onScreen then
@@ -76,7 +76,7 @@ RS.Heartbeat:Connect(function()
                         end
                     end
                     
-                    -- B. ESP CHỮ SIÊU TO (v11.2 Style)
+                    -- B. ESP CHỮ SIÊU TO
                     if _G.ESP then
                         if not v.Character:FindFirstChild("G_Chams") then
                             local h = Instance.new("Highlight", v.Character)
@@ -90,50 +90,51 @@ RS.Heartbeat:Connect(function()
                             l.TextColor3 = NeonRed; l.Font = Enum.Font.SourceSansBold; l.TextSize = 22
                         end
                         v.Character.Head.G_Tag.Info.Text = v.Name .. "\nHP: " .. math.floor(v.Character.Humanoid.Health) .. "\nDist: " .. math.floor(dist) .. "m"
-                    else
-                        if v.Character:FindFirstChild("G_Chams") then v.Character.G_Chams:Destroy() end
-                        if v.Character.Head:FindFirstChild("G_Tag") then v.Character.Head.G_Tag:Destroy() end
                     end
 
-                    -- C. AUTO BLOCK v12.0 (Deadzone Logic)
+                    -- C. AUTO BLOCK v12.1 (Anti-Jam Logic)
                     if _G.AutoBlock and dist < 25 then
-                        local anim = v.Character.Humanoid:FindFirstChildOfClass("Animator")
-                        if anim then
-                            for _, t in pairs(anim:GetPlayingAnimationTracks()) do
-                                if t.IsPlaying then
-                                    local n = t.Animation.Name:lower()
-                                    local isIgnore = false
-                                    for _, w in pairs(Ignore) do if n:find(w) then isIgnore = true break end end
-                                    
-                                    -- Logic Deadzone: Ở cự ly 1-4 studs yêu cầu hành động cực rõ ràng (>0.85)
-                                    -- Từ 5-25 studs giữ độ nhạy cao để chặn Skill/M1 đón đầu
-                                    local checkLimit = (dist <= 4.5) and 0.88 or 0.38
-                                    if not isIgnore and t.WeightCurrent > checkLimit then 
-                                        shouldBlock = true; break 
+                        -- CHỐNG KẸT: Nếu dưới 4.5 studs, ép nhả phím F để có thể đấm
+                        if dist <= 4.5 then
+                            shouldBlock = false
+                        else
+                            local anim = v.Character.Humanoid:FindFirstChildOfClass("Animator")
+                            if anim then
+                                for _, t in pairs(anim:GetPlayingAnimationTracks()) do
+                                    if t.IsPlaying then
+                                        local n = t.Animation.Name:lower()
+                                        local isIgnore = false
+                                        for _, w in pairs(Ignore) do if n:find(w) then isIgnore = true break end end
+                                        -- Cự ly xa vẫn block nhạy để chặn Skill
+                                        if not isIgnore and t.WeightCurrent > 0.45 then 
+                                            shouldBlock = true; break 
+                                        end
                                     end
                                 end
                             end
                         end
-                        if hrp.Velocity.Magnitude > 50 then shouldBlock = true end
+                        if hrp.Velocity.Magnitude > 55 then shouldBlock = true end
                     end
                 end
             end
             
-            -- D. THỰC THI AIM & BLOCK
+            -- D. THỰC THI AIM
             if _G.Aim and closestTarget then
                 LP.Character.HumanoidRootPart.CFrame = CFrame.lookAt(LP.Character.HumanoidRootPart.Position, Vector3.new(closestTarget.Position.X, LP.Character.HumanoidRootPart.Position.Y, closestTarget.Position.Z))
             end
             
-            -- Gửi lệnh nhấn/nhả F linh hoạt
-            VIM:SendKeyEvent(shouldBlock and _G.AutoBlock, Enum.KeyCode.F, false, game)
-            if not shouldBlock then 
-                VIM:SendKeyEvent(false, Enum.KeyCode.F, false, game) -- Ép nhả block
+            -- E. ĐIỀU KHIỂN BLOCK LINH HOẠT
+            if _G.AutoBlock then
+                VIM:SendKeyEvent(shouldBlock, Enum.KeyCode.F, false, game)
+                if not shouldBlock then
+                    VIM:SendKeyEvent(false, Enum.KeyCode.F, false, game) -- Luôn đảm bảo nhả phím khi không cần thiết
+                end
             end
         end
     end)
 end)
 
--- UI BUILDER (CHỮ TO)
+-- UI BUILDER
 local function AddBtn(name, y, callback)
     local b = Instance.new("TextButton", Main)
     b.Size = UDim2.new(1, -20, 0, 45); b.Position = UDim2.new(0, 10, 0, y)
