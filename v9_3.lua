@@ -1,16 +1,14 @@
 --[[ 
-   GALAXY PREMIUM by LeDangKhoi v11.5
-   - Fix Smart Aim: Mượt mà 100%, không bị lỗi xoay hay giật Camera (RenderStepped Hybrid).
-   - Auto Block: Giữ nguyên phản ứng tức thì v11.4 (Black Flash Ready - Stepped Loop).
-   - Speed: Unstoppable (Chạy xuyên Ragdoll/Stun/Bị đánh).
-   - UI: Chữ siêu to, dễ nhìn, độc quyền LeDangKhoi.
+   GALAXY PREMIUM by LeDangKhoi v11.6
+   - Fix Auto Block: Chống kẹt block khi áp sát, ưu tiên tấn công.
+   - Fix Smart Aim: Tăng tầm khóa mục tiêu (Không còn giới hạn 7 studs).
+   - Performance: Tối ưu hóa tuyệt đối cho Samsung A32.
 ]]
 
 local Players = game:GetService("Players")
 local LP = Players.LocalPlayer
 local RS = game:GetService("RunService")
 local VIM = game:GetService("VirtualInputManager")
-local Camera = workspace.CurrentCamera
 
 -- DỌN DẸP UI
 for _, v in pairs(LP.PlayerGui:GetChildren()) do
@@ -59,13 +57,11 @@ _G.AutoBlock = false
 _G.Aim = false
 _G.ESP = false
 
--- BIẾN MỤC TIÊU TOÀN CỤC (Dùng chung cho cả 2 luồng)
 local currentTargetHRP = nil
 local Ignore = {"idle", "walk", "run", "jump", "fall", "block", "guard", "hold", "dance", "emote"}
 
 -- =========================================
--- LUỒNG 1: PHẢN ỨNG TỨC THÌ (Auto Block & Speed)
--- RS.Stepped - 60+ FPS quét
+-- HỆ THỐNG XỬ LÝ CHÍNH (v11.6)
 -- =========================================
 RS.Stepped:Connect(function()
     pcall(function()
@@ -73,12 +69,12 @@ RS.Stepped:Connect(function()
             -- 1. Unstoppable Speed
             LP.Character.Humanoid.WalkSpeed = _G.Speed
             
-            -- 2. Fly Logic
+            -- 2. Fly
             if _G.Fly then LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 50, 0) end
             
             local myHRP = LP.Character.HumanoidRootPart
             local minDP = math.huge
-            local tempTargetHRP = nil -- Biến tạm tìm mục tiêu
+            local tempTarget = nil
             local shouldBlock = false
             
             for _, v in pairs(Players:GetPlayers()) do
@@ -86,12 +82,15 @@ RS.Stepped:Connect(function()
                     local hrp = v.Character.HumanoidRootPart
                     local dist = (myHRP.Position - hrp.Position).Magnitude
                     
-                    -- Tìm mục tiêu cho Aim (Chỉ tìm khi ở gần)
-                    if dist < 22 and v.Character.Humanoid.Health > 0 then
-                        if dist < minDP then minDP = dist tempTargetHRP = hrp end
+                    -- SMART AIM LOGIC (Mở rộng tầm khóa mục tiêu)
+                    if v.Character.Humanoid.Health > 0 and dist < 100 then 
+                        if dist < minDP then
+                            minDP = dist
+                            tempTarget = hrp
+                        end
                     end
                     
-                    -- ESP (Chữ siêu to v11.2 Style)
+                    -- ESP (Chữ siêu to v11.2)
                     if _G.ESP then
                         if not v.Character:FindFirstChild("G_Chams") then
                             local h = Instance.new("Highlight", v.Character)
@@ -110,8 +109,8 @@ RS.Stepped:Connect(function()
                         if v.Character.Head:FindFirstChild("G_Tag") then v.Character.Head.G_Tag:Destroy() end
                     end
 
-                    -- Auto Block Tức thì (Black Flash Ready - 0.55 Limit)
-                    if dist < 22 and _G.AutoBlock then
+                    -- AUTO BLOCK FIX (Chống kẹt khi áp sát)
+                    if _G.AutoBlock and dist < 25 then
                         local anim = v.Character.Humanoid:FindFirstChildOfClass("Animator")
                         if anim then
                             for _, t in pairs(anim:GetPlayingAnimationTracks()) do
@@ -119,43 +118,37 @@ RS.Stepped:Connect(function()
                                     local n = t.Animation.Name:lower()
                                     local isIgnore = false
                                     for _, w in pairs(Ignore) do if n:find(w) then isIgnore = true break end end
-                                    if not isIgnore and t.WeightCurrent > 0.55 then shouldBlock = true break end
+                                    
+                                    -- Logic mới: Càng gần càng yêu cầu trọng số đòn đánh cao hơn để Block
+                                    local sensitivity = (dist < 10) and 0.92 or 0.65
+                                    if not isIgnore and t.WeightCurrent > sensitivity then 
+                                        shouldBlock = true; break 
+                                    end
                                 end
                             end
                         end
-                        if hrp.Velocity.Magnitude > 50 then shouldBlock = true end
+                        if hrp.Velocity.Magnitude > 55 then shouldBlock = true end
                     end
                 end
             end
             
-            -- Cập nhật mục tiêu cho Aim
-            currentTargetHRP = tempTargetHRP
-            
-            -- Thực thi Block tức thì
+            currentTargetHRP = tempTarget
             if _G.AutoBlock then VIM:SendKeyEvent(shouldBlock, Enum.KeyCode.F, false, game) end
         end
     end)
 end)
 
--- =========================================
--- LUỒNG 2: SMART AIM MƯỢT MÀ
--- RS.RenderStepped - Tương thích Camera
--- =========================================
+-- AIM MƯỢT MÀ (RenderStepped)
 RS.RenderStepped:Connect(function()
-    pcall(function()
-        if _G.Aim and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") and currentTargetHRP then
-            -- Thực thi Aim (Xoay nhân vật cực mượt)
-            LP.Character.HumanoidRootPart.CFrame = CFrame.lookAt(
-                LP.Character.HumanoidRootPart.Position, 
-                Vector3.new(currentTargetHRP.Position.X, LP.Character.HumanoidRootPart.Position.Y, currentTargetHRP.Position.Z)
-            )
-        end
-    end)
+    if _G.Aim and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") and currentTargetHRP then
+        LP.Character.HumanoidRootPart.CFrame = CFrame.lookAt(
+            LP.Character.HumanoidRootPart.Position, 
+            Vector3.new(currentTargetHRP.Position.X, LP.Character.HumanoidRootPart.Position.Y, currentTargetHRP.Position.Z)
+        )
+    end
 end)
 
--- =========================================
--- UI BUILDER (CHỮ TO SIÊU NÉT)
--- =========================================
+-- UI BUILDER (CHỮ TO)
 local function AddBtn(name, y, callback)
     local b = Instance.new("TextButton", Main)
     b.Size = UDim2.new(1, -20, 0, 45); b.Position = UDim2.new(0, 10, 0, y)
