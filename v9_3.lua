@@ -1,8 +1,8 @@
 --[[ 
-   GALAXY PREMIUM v9.7 - ULTIMATE FIXED
-   - Fix ESP: Hiện Highlight, Tên, Máu và Khoảng cách 100%.
-   - Fix Auto Block: Chặn M1, Skill siêu tốc, không kẹt di chuyển.
-   - Smart Aim: Quét toàn màn hình, nhắm người gần nhất.
+   GALAXY PREMIUM v9.9 - GOD REFLEX
+   - Tốc độ: Phản xạ gần như 0s với RenderStepped.
+   - Surprise Guard: Chống úp sọt, chặn M1/Dash ngay khi vừa chạm.
+   - Pro Logic: Không block đòn 4 M1, không block Emoji/Move.
 ]]
 
 local Players = game:GetService("Players")
@@ -17,7 +17,7 @@ for _, ui in pairs(LP.PlayerGui:GetChildren()) do
 end
 
 local G = Instance.new("ScreenGui", LP.PlayerGui)
-G.Name = "GalaxyV9_7"
+G.Name = "GalaxyV9_9"
 G.ResetOnSpawn = false
 
 local NeonRed = Color3.fromRGB(255, 0, 0)
@@ -30,7 +30,7 @@ Main.BackgroundColor3, Main.Active, Main.Draggable = Dark, true, true
 Instance.new("UIStroke", Main).Color = NeonRed
 
 local Title = Instance.new("TextLabel", Main)
-Title.Size, Title.Text = UDim2.new(1, 0, 0, 30), "GALAXY v9.7"
+Title.Size, Title.Text = UDim2.new(1, 0, 0, 30), "GALAXY v9.9"
 Title.BackgroundColor3, Title.TextColor3, Title.Font = NeonRed, Color3.new(1,1,1), Enum.Font.SourceSansBold
 
 local OpenBtn = Instance.new("TextButton", G)
@@ -54,31 +54,46 @@ local function createBtn(txt, pos, func)
 end
 
 -- =========================================
--- [1] AUTO BLOCK FIX v9.7
+-- [1] GOD REFLEX AUTO BLOCK v9.9
 -- =========================================
 _G.AutoBlock = false
 local isHoldingF = false
-local BL = {"lethal", "counter", "grasp", "pinpoint", "stance", "react", "catch", "absorb", "flow", "water"}
+local IgnoreAnims = {"emoji", "dance", "emote", "rest", "idle", "walk", "run", "fall", "jump"}
 
-RS.Heartbeat:Connect(function()
+-- Dùng RenderStepped để đạt tốc độ phản xạ tối đa
+RS.RenderStepped:Connect(function()
     if _G.AutoBlock and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
         local shouldBlock = false
+        local myPos = LP.Character.HumanoidRootPart.Position
+        
         pcall(function()
             for _, v in pairs(Players:GetPlayers()) do
                 if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-                    local dist = (LP.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude
-                    if dist <= 18 then
+                    local targetHRP = v.Character.HumanoidRootPart
+                    local dist = (myPos - targetHRP.Position).Magnitude
+                    
+                    -- CHẶN DASH (Lướt thẳng úp sọt)
+                    if dist <= 22 and targetHRP.Velocity.Magnitude > 48 then
+                        shouldBlock = true
+                    end
+
+                    -- CHẶN ANIMATION (Đòn đánh M1 và Skill)
+                    if dist <= 16 and not shouldBlock then
                         local anim = v.Character.Humanoid:FindFirstChildOfClass("Animator")
                         if anim then
                             for _, t in pairs(anim:GetPlayingAnimationTracks()) do
                                 if t.IsPlaying then
                                     local n = t.Animation.Name:lower()
-                                    local move = n:find("run") or n:find("walk") or n:find("idle")
-                                    local anti = false
-                                    for _, w in pairs(BL) do if n:find(w) then anti = true break end end
                                     
-                                    -- Nhận diện đòn đánh (M1 hoặc Skill)
-                                    if not move and not anti and (t.TimePosition < 0.3 or t.WeightCurrent > 0.5) then
+                                    -- Lọc bỏ rác (Emoji/Move)
+                                    local isIgnore = false
+                                    for _, word in pairs(IgnoreAnims) do if n:find(word) then isIgnore = true break end end
+                                    
+                                    -- Thả đòn 4 M1 (Quan trọng để không bị kẹt combo)
+                                    local isM1_4 = n:find("final") or n:find("hit4") or n:find("last") or n:find("combo4")
+                                    
+                                    -- PHẢN XẠ TỨC THÌ: Chỉ cần đòn đánh vừa bắt đầu (Time < 0.2s)
+                                    if not isIgnore and not isM1_4 and (t.TimePosition < 0.22 or t.WeightCurrent > 0.5) then
                                         shouldBlock = true; break
                                     end
                                 end
@@ -86,9 +101,11 @@ RS.Heartbeat:Connect(function()
                         end
                     end
                 end
+                if shouldBlock then break end
             end
         end)
         
+        -- Thực thi nhấn/thả phím F siêu tốc
         if shouldBlock and not isHoldingF then
             isHoldingF = true
             VIM:SendKeyEvent(true, Enum.KeyCode.F, false, game)
@@ -100,43 +117,47 @@ RS.Heartbeat:Connect(function()
 end)
 
 -- =========================================
--- [2] PRO ESP v9.7 (FIXED)
+-- [2] CÁC TÍNH NĂNG SMART AIM & ESP
 -- =========================================
+createBtn("SMART AIM", 0, function(on)
+    _G.Aim = on
+    task.spawn(function()
+        while _G.Aim do RS.RenderStepped:Wait()
+            if LP.Character then
+                local t, minD = nil, math.huge
+                pcall(function()
+                    for _, p in pairs(Players:GetPlayers()) do
+                        if p ~= LP and p.Character and p.Character.Humanoid.Health > 0 then
+                            local _, vis = Camera:WorldToViewportPoint(p.Character.HumanoidRootPart.Position)
+                            if vis then
+                                local d = (LP.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
+                                if d < minD then minD = d t = p.Character.HumanoidRootPart end
+                            end
+                        end
+                    end
+                    if t then LP.Character.HumanoidRootPart.CFrame = CFrame.lookAt(LP.Character.HumanoidRootPart.Position, Vector3.new(t.Position.X, LP.Character.HumanoidRootPart.Position.Y, t.Position.Z)) end
+                end)
+            end
+        end
+    end)
+end)
+
 createBtn("PRO ESP", 35, function(on)
     _G.ESP = on
     task.spawn(function()
-        while _G.ESP do task.wait(0.1)
+        while _G.ESP do task.wait(0.2)
             for _, v in pairs(Players:GetPlayers()) do
                 if v ~= LP and v.Character and v.Character:FindFirstChild("Head") then
-                    -- Chams (Highlight)
-                    if not v.Character:FindFirstChild("Highlight") then
-                        local hl = Instance.new("Highlight", v.Character)
-                        hl.FillColor = NeonRed
-                        hl.OutlineTransparency = 0
+                    if not v.Character:FindFirstChild("Highlight") then Instance.new("Highlight", v.Character).FillColor = NeonRed end
+                    if not v.Character.Head:FindFirstChild("GTag") then
+                        local b = Instance.new("BillboardGui", v.Character.Head)
+                        b.Name = "GTag"; b.Size = UDim2.new(0,120,0,40); b.AlwaysOnTop = true; b.StudsOffset = Vector3.new(0,3,0)
+                        local l = Instance.new("TextLabel", b)
+                        l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = NeonRed; l.Font = 8; l.TextSize = 13
                     end
-                    -- Name, Health, Distance Tag
-                    local head = v.Character.Head
-                    if not head:FindFirstChild("GalaxyTag") then
-                        local bg = Instance.new("BillboardGui", head)
-                        bg.Name = "GalaxyTag"
-                        bg.Size = UDim2.new(0, 150, 0, 50)
-                        bg.StudsOffset = Vector3.new(0, 3, 0)
-                        bg.AlwaysOnTop = true
-                        
-                        local txt = Instance.new("TextLabel", bg)
-                        txt.Name = "Info"
-                        txt.Size = UDim2.new(1, 0, 1, 0)
-                        txt.BackgroundTransparency = 1
-                        txt.TextColor3 = NeonRed
-                        txt.TextStrokeTransparency = 0
-                        txt.Font = Enum.Font.SourceSansBold
-                        txt.TextSize = 14
-                    end
-                    
                     pcall(function()
-                        local dist = math.floor((head.Position - LP.Character.Head.Position).Magnitude)
-                        local hp = math.floor(v.Character.Humanoid.Health)
-                        head.GalaxyTag.Info.Text = v.Name .. "\n[HP: " .. hp .. "] [" .. dist .. "m]"
+                        local dist = math.floor((v.Character.Head.Position - LP.Character.Head.Position).Magnitude)
+                        v.Character.Head.GTag.TextLabel.Text = v.Name.."\n[HP: "..math.floor(v.Character.Humanoid.Health).."] ["..dist.."m]"
                     end)
                 end
             end
@@ -144,38 +165,9 @@ createBtn("PRO ESP", 35, function(on)
                 for _, v in pairs(Players:GetPlayers()) do
                     if v.Character then
                         if v.Character:FindFirstChild("Highlight") then v.Character.Highlight:Destroy() end
-                        if v.Character.Head:FindFirstChild("GalaxyTag") then v.Character.Head.GalaxyTag:Destroy() end
+                        if v.Character.Head:FindFirstChild("GTag") then v.Character.Head.GTag:Destroy() end
                     end
                 end
-            end
-        end
-    end)
-end)
-
--- =========================================
--- [3] SMART AIM (FULL SCREEN)
--- =========================================
-createBtn("SMART AIM", 0, function(on)
-    _G.Aim = on
-    task.spawn(function()
-        while _G.Aim do RS.RenderStepped:Wait()
-            if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-                local target = nil
-                local minCDist = math.huge
-                pcall(function()
-                    for _, p in pairs(Players:GetPlayers()) do
-                        if p ~= LP and p.Character and p.Character.Humanoid.Health > 0 then
-                            local pos, vis = Camera:WorldToViewportPoint(p.Character.HumanoidRootPart.Position)
-                            if vis then
-                                local d = (LP.Character.HumanoidRootPart.Position - p.Character.HumanoidRootPart.Position).Magnitude
-                                if d < minCDist then minCDist = d target = p.Character.HumanoidRootPart end
-                            end
-                        end
-                    end
-                    if target then
-                        LP.Character.HumanoidRootPart.CFrame = CFrame.lookAt(LP.Character.HumanoidRootPart.Position, Vector3.new(target.Position.X, LP.Character.HumanoidRootPart.Position.Y, target.Position.Z))
-                    end
-                end)
             end
         end
     end)
