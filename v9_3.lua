@@ -1,9 +1,9 @@
 --[[ 
-   GALAXY PREMIUM v10.0 - FINAL PRECISION
-   - Fix: Chỉ block khi có đòn đánh thực sự (M1/Skill) hoặc Dash trực diện.
-   - Fix: Không còn tự động block khi đối thủ chỉ chạy xung quanh.
-   - Reflex: Giữ nguyên tốc độ phản xạ 0s của v9.9.
-   - ESP & AIM: Giữ nguyên bản cũ hoàn hảo.
+   GALAXY PREMIUM v10.1 - PRECISION PLUS
+   - Fix: Không block khi đối thủ đứng yên (Idle).
+   - Logic: Chỉ block đòn đánh có trọng số cực cao (Strict Weight).
+   - Reflex: Phản xạ siêu nhanh với đòn M1 úp sọt ở cự ly gần.
+   - ESP & SMART AIM: Hoàn hảo - Giữ nguyên.
 ]]
 
 local Players = game:GetService("Players")
@@ -12,26 +12,29 @@ local RS = game:GetService("RunService")
 local VIM = game:GetService("VirtualInputManager")
 local Camera = workspace.CurrentCamera
 
--- Xóa UI cũ
-for _, ui in pairs(LP.PlayerGui:GetChildren()) do
-    if ui.Name:find("Galaxy") then ui:Destroy() end
+-- UI CLEANER
+local function ClearOldUI()
+    for _, ui in pairs(LP.PlayerGui:GetChildren()) do
+        if ui.Name:find("Galaxy") then ui:Destroy() end
+    end
 end
+ClearOldUI()
 
 local G = Instance.new("ScreenGui", LP.PlayerGui)
-G.Name = "GalaxyV10"
+G.Name = "GalaxyV10_1"
 G.ResetOnSpawn = false
 
 local NeonRed = Color3.fromRGB(255, 0, 0)
 local Dark = Color3.fromRGB(15, 15, 15)
 
--- MENU UI
+-- MENU UI CORE
 local Main = Instance.new("Frame", G)
 Main.Size, Main.Position = UDim2.new(0, 180, 0, 380), UDim2.new(0.5, -90, 0.5, -190)
 Main.BackgroundColor3, Main.Active, Main.Draggable = Dark, true, true
 Instance.new("UIStroke", Main).Color = NeonRed
 
 local Title = Instance.new("TextLabel", Main)
-Title.Size, Title.Text = UDim2.new(1, 0, 0, 30), "GALAXY v10.0"
+Title.Size, Title.Text = UDim2.new(1, 0, 0, 30), "GALAXY v10.1"
 Title.BackgroundColor3, Title.TextColor3, Title.Font = NeonRed, Color3.new(1,1,1), Enum.Font.SourceSansBold
 
 local OpenBtn = Instance.new("TextButton", G)
@@ -55,10 +58,11 @@ local function createBtn(txt, pos, func)
 end
 
 -- =========================================
--- [1] PRECISION AUTO BLOCK v10.0
+-- [1] AUTO BLOCK SMART v10.1 (STRICT WEIGHT FIX)
 -- =========================================
 _G.AutoBlock = false
 local isHoldingF = false
+-- Thêm 'idle' vào danh sách bỏ qua
 local IgnoreAnims = {"emoji", "dance", "emote", "rest", "idle", "walk", "run", "fall", "jump"}
 
 RS.RenderStepped:Connect(function()
@@ -73,14 +77,14 @@ RS.RenderStepped:Connect(function()
                     local dist = (myHRP.Position - targetHRP.Position).Magnitude
                     
                     if dist <= 18 then
-                        -- KIỂM TRA HƯỚNG LAO TỚI (Phải lao về phía mình mới block)
+                        -- KIỂM TRA HƯỚNG LAO TỚI (Giữ nguyên logic cũ perfect)
                         local dotProduct = (targetHRP.Position - myHRP.Position).Unit:Dot(targetHRP.Velocity.Unit)
                         local isDashingAtMe = (targetHRP.Velocity.Magnitude > 50 and dotProduct < -0.7)
 
                         if isDashingAtMe then
                             shouldBlock = true
                         else
-                            -- KIỂM TRA ANIMATION CHẶT CHẼ
+                            -- KIỂM TRA ANIMATION CHẶT CHẼ HƠN (Strict Weight Check)
                             local anim = v.Character.Humanoid:FindFirstChildOfClass("Animator")
                             if anim then
                                 for _, t in pairs(anim:GetPlayingAnimationTracks()) do
@@ -91,9 +95,16 @@ RS.RenderStepped:Connect(function()
                                         
                                         local isM1_4 = n:find("final") or n:find("hit4") or n:find("last") or n:find("combo4")
                                         
-                                        -- Chỉ block khi có trọng số đòn đánh cao (Weight) và không phải đòn 4
-                                        if not isIgnore and not isM1_4 and (t.WeightCurrent > 0.75 or (t.TimePosition < 0.2 and t.WeightCurrent > 0.3)) then
-                                            shouldBlock = true; break
+                                        -- Logic v10.1: 
+                                        -- 1. Tầm xa (8-18s): Phải là đòn mạnh (Weight > 0.9)
+                                        -- 2. Tầm gần (<8s): Block M1 nhanh (Weight > 0.75)
+                                        -- 3. Bỏ qua M1 đòn 4.
+                                        if not isIgnore and not isM1_4 then
+                                            if dist < 8 and t.WeightCurrent > 0.75 then
+                                                shouldBlock = true; break
+                                            elseif dist >= 8 and t.WeightCurrent > 0.91 then
+                                                shouldBlock = true; break
+                                            end
                                         end
                                     end
                                 end
@@ -105,6 +116,7 @@ RS.RenderStepped:Connect(function()
             end
         end)
         
+        -- Nhấn/Thả phím F siêu tốc
         if shouldBlock and not isHoldingF then
             isHoldingF = true
             VIM:SendKeyEvent(true, Enum.KeyCode.F, false, game)
@@ -116,7 +128,7 @@ RS.RenderStepped:Connect(function()
 end)
 
 -- =========================================
--- [2] SMART AIM & PRO ESP (HOÀN HẢO - GIỮ NGUYÊN)
+-- [2] PRO ESP & SMART AIM (HOÀN HẢO - GIỮ NGUYÊN)
 -- =========================================
 createBtn("SMART AIM", 0, function(on)
     _G.Aim = on
@@ -179,6 +191,7 @@ end)
 
 createBtn("AUTO BLOCK", 105, function(on) _G.AutoBlock = on end)
 
+-- SPEED BOX
 local I = Instance.new("TextBox", Main)
 I.Size, I.Position, I.Text = UDim2.new(1, -40, 0, 30), UDim2.new(0, 20, 0, 185), "16"
 I.BackgroundColor3, I.TextColor3 = Color3.fromRGB(40,40,40), NeonRed
