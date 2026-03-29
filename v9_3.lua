@@ -1,9 +1,9 @@
 --[[ 
-   GALAXY PREMIUM by LeDangKhoi v11.8
-   - Fix Auto Block: Cơ chế Safe Zone (Dưới 8 studs không kẹt thủ, thoải mái tấn công).
-   - Smart Aim: Infinite Range FOVC (Khóa mục tiêu cực xa theo tâm màn hình).
-   - Speed: Unstoppable (Chống Ragdoll/Stun tuyệt đối).
-   - UI: Chữ siêu to (Size 22), Tên menu độc quyền.
+   GALAXY PREMIUM by LeDangKhoi v11.9
+   - Auto Block: Chặn 100% M1, Skill và Dash (Phản ứng cực nhanh).
+   - Smart Aim: Infinite Range FOVC (Khóa mục tiêu xa theo tâm màn hình).
+   - Speed: Unstoppable (Chống Ragdoll/Stun/Bị đánh).
+   - UI: Chữ siêu to (Size 22), Độc quyền LeDangKhoi.
 ]]
 
 local Players = game:GetService("Players")
@@ -59,10 +59,11 @@ _G.AutoBlock = false
 _G.Aim = false
 _G.ESP = false
 
-local Ignore = {"idle", "walk", "run", "jump", "fall", "block", "guard", "hold", "dance", "emote"}
+-- Danh sách hành động BỊ BỎ QUA (Chỉ bỏ qua di chuyển cơ bản)
+local Ignore = {"idle", "walk", "run", "jump", "fall", "dance", "emote"}
 
 -- =========================================
--- HỆ THỐNG XỬ LÝ MASTER v11.8
+-- HỆ THỐNG XỬ LÝ MASTER v11.9
 -- =========================================
 RS.Heartbeat:Connect(function()
     pcall(function()
@@ -115,8 +116,8 @@ RS.Heartbeat:Connect(function()
                         if v.Character.Head:FindFirstChild("G_Tag") then v.Character.Head.G_Tag:Destroy() end
                     end
 
-                    -- C. AUTO BLOCK v11.8 (Safe Zone Detection)
-                    if _G.AutoBlock and dist < 28 then
+                    -- C. AUTO BLOCK v11.9 (M1, Skill & Dash Detection)
+                    if _G.AutoBlock and dist < 30 then
                         local anim = v.Character.Humanoid:FindFirstChildOfClass("Animator")
                         if anim then
                             for _, t in pairs(anim:GetPlayingAnimationTracks()) do
@@ -125,16 +126,15 @@ RS.Heartbeat:Connect(function()
                                     local isIgnore = false
                                     for _, w in pairs(Ignore) do if n:find(w) then isIgnore = true break end end
                                     
-                                    -- Safe Zone: Dưới 8.5 studs yêu cầu đòn đánh cực rõ mới Block
-                                    local limit = (dist < 8.5) and 0.98 or 0.65
-                                    if not isIgnore and t.WeightCurrent > limit then 
+                                    -- Độ nhạy 0.35: Bắt được cả M1 và vận Skill nhanh
+                                    if not isIgnore and t.WeightCurrent > 0.35 then 
                                         shouldBlock = true; break 
                                     end
                                 end
                             end
                         end
-                        -- Chặn các đòn lao tới tốc độ cao
-                        if hrp.Velocity.Magnitude > 58 then shouldBlock = true end
+                        -- Chặn Dash (Khi đối thủ lao tới nhanh)
+                        if hrp.Velocity.Magnitude > 45 then shouldBlock = true end
                     end
                 end
             end
@@ -146,7 +146,10 @@ RS.Heartbeat:Connect(function()
                     Vector3.new(closestTarget.Position.X, LP.Character.HumanoidRootPart.Position.Y, closestTarget.Position.Z)
                 )
             end
-            if _G.AutoBlock then VIM:SendKeyEvent(shouldBlock, Enum.KeyCode.F, false, game) end
+            -- VIM gửi lệnh F (Thủ)
+            if _G.AutoBlock then 
+                VIM:SendKeyEvent(shouldBlock, Enum.KeyCode.F, false, game)
+            end
         end
     end)
 end)
