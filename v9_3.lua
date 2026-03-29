@@ -1,15 +1,16 @@
 --[[ 
-   GALAXY PREMIUM by LeDangKhoi v11.4
-   - Auto Block: Instant Reaction (Phản ứng tức thì để tạo Black Flash).
-   - Core: RunService Stepped Loop (Tốc độ quét cao nhất).
-   - UI: Chữ siêu to, Tên menu độc quyền của LeDangKhoi.
-   - Speed: Unstoppable (Chạy xuyên Ragdoll/Stun).
+   GALAXY PREMIUM by LeDangKhoi v11.5
+   - Fix Smart Aim: Mượt mà 100%, không bị lỗi xoay hay giật Camera (RenderStepped Hybrid).
+   - Auto Block: Giữ nguyên phản ứng tức thì v11.4 (Black Flash Ready - Stepped Loop).
+   - Speed: Unstoppable (Chạy xuyên Ragdoll/Stun/Bị đánh).
+   - UI: Chữ siêu to, dễ nhìn, độc quyền LeDangKhoi.
 ]]
 
 local Players = game:GetService("Players")
 local LP = Players.LocalPlayer
 local RS = game:GetService("RunService")
 local VIM = game:GetService("VirtualInputManager")
+local Camera = workspace.CurrentCamera
 
 -- DỌN DẸP UI
 for _, v in pairs(LP.PlayerGui:GetChildren()) do
@@ -22,7 +23,7 @@ G.ResetOnSpawn = false
 
 local NeonRed = Color3.fromRGB(255, 0, 0)
 
--- MENU FRAME (v11.2 Style)
+-- MENU FRAME
 local Main = Instance.new("Frame", G)
 Main.Size = UDim2.new(0, 220, 0, 400)
 Main.Position = UDim2.new(0.5, -110, 0.4, 0)
@@ -58,11 +59,14 @@ _G.AutoBlock = false
 _G.Aim = false
 _G.ESP = false
 
--- =========================================
--- HỆ THỐNG PHẢN ỨNG TỨC THÌ (v11.4)
--- =========================================
+-- BIẾN MỤC TIÊU TOÀN CỤC (Dùng chung cho cả 2 luồng)
+local currentTargetHRP = nil
 local Ignore = {"idle", "walk", "run", "jump", "fall", "block", "guard", "hold", "dance", "emote"}
 
+-- =========================================
+-- LUỒNG 1: PHẢN ỨNG TỨC THÌ (Auto Block & Speed)
+-- RS.Stepped - 60+ FPS quét
+-- =========================================
 RS.Stepped:Connect(function()
     pcall(function()
         if LP.Character and LP.Character:FindFirstChild("Humanoid") then
@@ -72,16 +76,22 @@ RS.Stepped:Connect(function()
             -- 2. Fly Logic
             if _G.Fly then LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 50, 0) end
             
-            local target = nil
+            local myHRP = LP.Character.HumanoidRootPart
             local minDP = math.huge
+            local tempTargetHRP = nil -- Biến tạm tìm mục tiêu
             local shouldBlock = false
             
             for _, v in pairs(Players:GetPlayers()) do
                 if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
                     local hrp = v.Character.HumanoidRootPart
-                    local dist = (LP.Character.HumanoidRootPart.Position - hrp.Position).Magnitude
+                    local dist = (myHRP.Position - hrp.Position).Magnitude
                     
-                    -- ESP (Chữ siêu to v11.2)
+                    -- Tìm mục tiêu cho Aim (Chỉ tìm khi ở gần)
+                    if dist < 22 and v.Character.Humanoid.Health > 0 then
+                        if dist < minDP then minDP = dist tempTargetHRP = hrp end
+                    end
+                    
+                    -- ESP (Chữ siêu to v11.2 Style)
                     if _G.ESP then
                         if not v.Character:FindFirstChild("G_Chams") then
                             local h = Instance.new("Highlight", v.Character)
@@ -93,7 +103,6 @@ RS.Stepped:Connect(function()
                             local l = Instance.new("TextLabel", b)
                             l.Name = "Info"; l.Size = UDim2.new(1, 0, 1, 0); l.BackgroundTransparency = 1
                             l.TextColor3 = NeonRed; l.Font = Enum.Font.SourceSansBold; l.TextSize = 22
-                            l.TextStrokeTransparency = 0
                         end
                         v.Character.Head.G_Tag.Info.Text = v.Name .. "\nHP: " .. math.floor(v.Character.Humanoid.Health) .. "\nDist: " .. math.floor(dist) .. "m"
                     else
@@ -101,40 +110,45 @@ RS.Stepped:Connect(function()
                         if v.Character.Head:FindFirstChild("G_Tag") then v.Character.Head.G_Tag:Destroy() end
                     end
 
-                    -- INSTANT AUTO BLOCK (Black Flash Config)
-                    if dist < 22 then
-                        if dist < minDP and v.Character.Humanoid.Health > 0 then minDP = dist; target = hrp end
-                        if _G.AutoBlock then
-                            local anim = v.Character.Humanoid:FindFirstChildOfClass("Animator")
-                            if anim then
-                                for _, t in pairs(anim:GetPlayingAnimationTracks()) do
-                                    if t.IsPlaying then
-                                        local n = t.Animation.Name:lower()
-                                        local isIgnore = false
-                                        for _, w in pairs(Ignore) do if n:find(w) then isIgnore = true break end end
-                                        
-                                        -- Độ nhạy cực cao (0.55) để phản ứng ngay lập tức
-                                        if not isIgnore and t.WeightCurrent > 0.55 then 
-                                            shouldBlock = true; break 
-                                        end
-                                    end
+                    -- Auto Block Tức thì (Black Flash Ready - 0.55 Limit)
+                    if dist < 22 and _G.AutoBlock then
+                        local anim = v.Character.Humanoid:FindFirstChildOfClass("Animator")
+                        if anim then
+                            for _, t in pairs(anim:GetPlayingAnimationTracks()) do
+                                if t.IsPlaying then
+                                    local n = t.Animation.Name:lower()
+                                    local isIgnore = false
+                                    for _, w in pairs(Ignore) do if n:find(w) then isIgnore = true break end end
+                                    if not isIgnore and t.WeightCurrent > 0.55 then shouldBlock = true break end
                                 end
                             end
-                            if hrp.Velocity.Magnitude > 50 then shouldBlock = true end
                         end
+                        if hrp.Velocity.Magnitude > 50 then shouldBlock = true end
                     end
                 end
             end
             
-            -- Thực thi Aim
-            if _G.Aim and target then
-                LP.Character.HumanoidRootPart.CFrame = CFrame.lookAt(LP.Character.HumanoidRootPart.Position, Vector3.new(target.Position.X, LP.Character.HumanoidRootPart.Position.Y, target.Position.Z))
-            end
+            -- Cập nhật mục tiêu cho Aim
+            currentTargetHRP = tempTargetHRP
             
             -- Thực thi Block tức thì
-            if _G.AutoBlock then
-                VIM:SendKeyEvent(shouldBlock, Enum.KeyCode.F, false, game)
-            end
+            if _G.AutoBlock then VIM:SendKeyEvent(shouldBlock, Enum.KeyCode.F, false, game) end
+        end
+    end)
+end)
+
+-- =========================================
+-- LUỒNG 2: SMART AIM MƯỢT MÀ
+-- RS.RenderStepped - Tương thích Camera
+-- =========================================
+RS.RenderStepped:Connect(function()
+    pcall(function()
+        if _G.Aim and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") and currentTargetHRP then
+            -- Thực thi Aim (Xoay nhân vật cực mượt)
+            LP.Character.HumanoidRootPart.CFrame = CFrame.lookAt(
+                LP.Character.HumanoidRootPart.Position, 
+                Vector3.new(currentTargetHRP.Position.X, LP.Character.HumanoidRootPart.Position.Y, currentTargetHRP.Position.Z)
+            )
         end
     end)
 end)
