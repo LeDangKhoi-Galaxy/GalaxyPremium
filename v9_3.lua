@@ -1,9 +1,9 @@
 --[[ 
-   GALAXY PREMIUM by LeDangKhoi v12.3
-   - FIX TRIỆT ĐỂ KẸT BLOCK: Tự động ngắt kết nối Block khi đối thủ áp sát < 6 studs.
-   - Combat: Đảm bảo 100% vung đấm M1 được khi đánh gần.
-   - Smart Aim: Infinite Range (Aim xa vô tận, quét theo tâm Camera).
-   - ESP: Chữ siêu to đỏ (v11.2), hiển thị đầy đủ HP và Khoảng cách.
+   GALAXY PREMIUM by LeDangKhoi v12.4
+   - FIX SPAM BLOCK: Chỉ Block khi đối thủ ở trong tầm 7m - 40m.
+   - FIX KẸT BLOCK: Dưới 7m tự động nhả Block 100% để đấm M1.
+   - Smart Aim: Infinite Range (Khóa mục tiêu xa theo tâm Camera).
+   - ESP: Chữ siêu to đỏ (v11.2 Style).
 ]]
 
 local Players = game:GetService("Players")
@@ -46,7 +46,7 @@ _G.Speed = 16; _G.Fly = false; _G.AutoBlock = false; _G.Aim = false; _G.ESP = fa
 local Ignore = {"idle", "walk", "run", "jump", "fall", "dance", "emote"}
 
 -- =========================================
--- HỆ THỐNG XỬ LÝ MASTER v12.3
+-- HỆ THỐNG XỬ LÝ MASTER v12.4
 -- =========================================
 RS.Heartbeat:Connect(function()
     pcall(function()
@@ -56,7 +56,6 @@ RS.Heartbeat:Connect(function()
             
             local myHRP = LP.Character.HumanoidRootPart
             local shouldBlock = false
-            local tooClose = false -- Biến kiểm tra áp sát cực gần
             local closestTarget = nil
             local minFOVDist = math.huge
             
@@ -91,11 +90,10 @@ RS.Heartbeat:Connect(function()
                         v.Character.Head.G_Tag.Info.Text = v.Name .. "\nHP: " .. math.floor(v.Character.Humanoid.Health) .. "\nDist: " .. math.floor(dist) .. "m"
                     end
 
-                    -- C. AUTO BLOCK v12.3 (The Final Fix)
+                    -- C. AUTO BLOCK v12.4 (Tactical Range Gate)
                     if _G.AutoBlock then
-                        if dist < 6.5 then
-                            tooClose = true -- Đánh dấu áp sát để ngắt block hoàn toàn
-                        elseif dist < 28 then
+                        -- CHỈ BLOCK KHI TRONG TẦM NGUY HIỂM (7m đến 40m)
+                        if dist > 7 and dist < 40 then
                             local anim = v.Character.Humanoid:FindFirstChildOfClass("Animator")
                             if anim then
                                 for _, t in pairs(anim:GetPlayingAnimationTracks()) do
@@ -103,12 +101,14 @@ RS.Heartbeat:Connect(function()
                                         local n = t.Animation.Name:lower()
                                         local isIgnore = false
                                         for _, w in pairs(Ignore) do if n:find(w) then isIgnore = true break end end
-                                        if not isIgnore and t.WeightCurrent > 0.45 then shouldBlock = true; break end
+                                        -- Lọc kỹ hơn để tránh spam tầm xa
+                                        if not isIgnore and t.WeightCurrent > 0.55 then shouldBlock = true; break end
                                     end
                                 end
                             end
                         end
-                        if hrp.Velocity.Magnitude > 55 then shouldBlock = true end
+                        -- Chặn Dash lao tới
+                        if dist < 40 and hrp.Velocity.Magnitude > 55 then shouldBlock = true end
                     end
                 end
             end
@@ -118,14 +118,11 @@ RS.Heartbeat:Connect(function()
                 LP.Character.HumanoidRootPart.CFrame = CFrame.lookAt(LP.Character.HumanoidRootPart.Position, Vector3.new(closestTarget.Position.X, LP.Character.HumanoidRootPart.Position.Y, closestTarget.Position.Z))
             end
             
-            -- E. ĐIỀU KHIỂN BLOCK (Ngắt kết nối khi quá gần)
+            -- E. ĐIỀU KHIỂN BLOCK (Tuyệt đối không spam ngoài tầm)
             if _G.AutoBlock then
-                if tooClose then
-                    -- KHI QUÁ GẦN: ÉP NHẢ F VÀ KHÔNG NHẤN LẠI
+                VIM:SendKeyEvent(shouldBlock, Enum.KeyCode.F, false, game)
+                if not shouldBlock then
                     VIM:SendKeyEvent(false, Enum.KeyCode.F, false, game)
-                else
-                    VIM:SendKeyEvent(shouldBlock, Enum.KeyCode.F, false, game)
-                    if not shouldBlock then VIM:SendKeyEvent(false, Enum.KeyCode.F, false, game) end
                 end
             end
         end
