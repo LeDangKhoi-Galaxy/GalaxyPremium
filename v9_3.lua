@@ -1,9 +1,9 @@
 --[[ 
-   GALAXY PREMIUM by LeDangKhoi v11.9
-   - Auto Block: Chặn 100% M1, Skill và Dash (Phản ứng cực nhanh).
+   GALAXY PREMIUM by LeDangKhoi v12.0
+   - Fix Auto Block: Giải quyết triệt để lỗi kẹt Block ở cự ly 1-3 studs.
+   - Mechanism: Deadzone Logic (Tự động nhả Block khi không có đòn đánh thực sự).
    - Smart Aim: Infinite Range FOVC (Khóa mục tiêu xa theo tâm màn hình).
-   - Speed: Unstoppable (Chống Ragdoll/Stun/Bị đánh).
-   - UI: Chữ siêu to (Size 22), Độc quyền LeDangKhoi.
+   - Speed: Unstoppable (Chống Ragdoll/Stun).
 ]]
 
 local Players = game:GetService("Players")
@@ -18,60 +18,42 @@ for _, v in pairs(LP.PlayerGui:GetChildren()) do
 end
 
 local G = Instance.new("ScreenGui", LP.PlayerGui)
-G.Name = "GalaxyKhoi"
-G.ResetOnSpawn = false
+G.Name = "GalaxyKhoi"; G.ResetOnSpawn = false
 
 local NeonRed = Color3.fromRGB(255, 0, 0)
 
 -- MENU FRAME
 local Main = Instance.new("Frame", G)
-Main.Size = UDim2.new(0, 220, 0, 400)
-Main.Position = UDim2.new(0.5, -110, 0.4, 0)
-Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-Main.BorderSizePixel = 0
-Main.Active = true
-Main.Draggable = true
+Main.Size = UDim2.new(0, 220, 0, 400); Main.Position = UDim2.new(0.5, -110, 0.4, 0)
+Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20); Main.BorderSizePixel = 0
+Main.Active = true; Main.Draggable = true
 Instance.new("UIStroke", Main).Color = NeonRed
 
 local Title = Instance.new("TextLabel", Main)
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.BackgroundColor3 = NeonRed
-Title.Text = "GALAXY PREMIUM by LeDangKhoi"
-Title.TextColor3 = Color3.new(1,1,1)
-Title.Font = Enum.Font.SourceSansBold
-Title.TextSize = 16
+Title.Size = UDim2.new(1, 0, 0, 40); Title.BackgroundColor3 = NeonRed
+Title.Text = "GALAXY PREMIUM by LeDangKhoi"; Title.TextColor3 = Color3.new(1,1,1)
+Title.Font = Enum.Font.SourceSansBold; Title.TextSize = 16
 
 -- TOGGLE BUTTON
 local TBtn = Instance.new("TextButton", G)
-TBtn.Size = UDim2.new(0, 70, 0, 35)
-TBtn.Position = UDim2.new(0, 10, 0.5, 0)
-TBtn.BackgroundColor3 = Color3.new(0,0,0)
-TBtn.Text = "GALAXY"
-TBtn.TextColor3 = NeonRed
+TBtn.Size = UDim2.new(0, 70, 0, 35); TBtn.Position = UDim2.new(0, 10, 0.5, 0)
+TBtn.BackgroundColor3 = Color3.new(0,0,0); TBtn.Text = "GALAXY"; TBtn.TextColor3 = NeonRed
 TBtn.Font = Enum.Font.SourceSansBold
 TBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
 Instance.new("UIStroke", TBtn).Color = NeonRed
 
 -- BIẾN ĐIỀU KHIỂN
-_G.Speed = 16
-_G.Fly = false
-_G.AutoBlock = false
-_G.Aim = false
-_G.ESP = false
+_G.Speed = 16; _G.Fly = false; _G.AutoBlock = false; _G.Aim = false; _G.ESP = false
 
--- Danh sách hành động BỊ BỎ QUA (Chỉ bỏ qua di chuyển cơ bản)
 local Ignore = {"idle", "walk", "run", "jump", "fall", "dance", "emote"}
 
 -- =========================================
--- HỆ THỐNG XỬ LÝ MASTER v11.9
+-- HỆ THỐNG XỬ LÝ MASTER v12.0
 -- =========================================
 RS.Heartbeat:Connect(function()
     pcall(function()
         if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-            -- 1. Unstoppable Speed
             LP.Character.Humanoid.WalkSpeed = _G.Speed
-            
-            -- 2. Fly Logic
             if _G.Fly then LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 50, 0) end
             
             local myHRP = LP.Character.HumanoidRootPart
@@ -90,10 +72,7 @@ RS.Heartbeat:Connect(function()
                         if onScreen then
                             local screenCenter = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
                             local fovDist = (screenCenter - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
-                            if fovDist < minFOVDist then
-                                minFOVDist = fovDist
-                                closestTarget = hrp
-                            end
+                            if fovDist < minFOVDist then minFOVDist = fovDist; closestTarget = hrp end
                         end
                     end
                     
@@ -116,8 +95,8 @@ RS.Heartbeat:Connect(function()
                         if v.Character.Head:FindFirstChild("G_Tag") then v.Character.Head.G_Tag:Destroy() end
                     end
 
-                    -- C. AUTO BLOCK v11.9 (M1, Skill & Dash Detection)
-                    if _G.AutoBlock and dist < 30 then
+                    -- C. AUTO BLOCK v12.0 (Deadzone Logic)
+                    if _G.AutoBlock and dist < 25 then
                         local anim = v.Character.Humanoid:FindFirstChildOfClass("Animator")
                         if anim then
                             for _, t in pairs(anim:GetPlayingAnimationTracks()) do
@@ -126,29 +105,29 @@ RS.Heartbeat:Connect(function()
                                     local isIgnore = false
                                     for _, w in pairs(Ignore) do if n:find(w) then isIgnore = true break end end
                                     
-                                    -- Độ nhạy 0.35: Bắt được cả M1 và vận Skill nhanh
-                                    if not isIgnore and t.WeightCurrent > 0.35 then 
+                                    -- Logic Deadzone: Ở cự ly 1-4 studs yêu cầu hành động cực rõ ràng (>0.85)
+                                    -- Từ 5-25 studs giữ độ nhạy cao để chặn Skill/M1 đón đầu
+                                    local checkLimit = (dist <= 4.5) and 0.88 or 0.38
+                                    if not isIgnore and t.WeightCurrent > checkLimit then 
                                         shouldBlock = true; break 
                                     end
                                 end
                             end
                         end
-                        -- Chặn Dash (Khi đối thủ lao tới nhanh)
-                        if hrp.Velocity.Magnitude > 45 then shouldBlock = true end
+                        if hrp.Velocity.Magnitude > 50 then shouldBlock = true end
                     end
                 end
             end
             
             -- D. THỰC THI AIM & BLOCK
             if _G.Aim and closestTarget then
-                LP.Character.HumanoidRootPart.CFrame = CFrame.lookAt(
-                    LP.Character.HumanoidRootPart.Position, 
-                    Vector3.new(closestTarget.Position.X, LP.Character.HumanoidRootPart.Position.Y, closestTarget.Position.Z)
-                )
+                LP.Character.HumanoidRootPart.CFrame = CFrame.lookAt(LP.Character.HumanoidRootPart.Position, Vector3.new(closestTarget.Position.X, LP.Character.HumanoidRootPart.Position.Y, closestTarget.Position.Z))
             end
-            -- VIM gửi lệnh F (Thủ)
-            if _G.AutoBlock then 
-                VIM:SendKeyEvent(shouldBlock, Enum.KeyCode.F, false, game)
+            
+            -- Gửi lệnh nhấn/nhả F linh hoạt
+            VIM:SendKeyEvent(shouldBlock and _G.AutoBlock, Enum.KeyCode.F, false, game)
+            if not shouldBlock then 
+                VIM:SendKeyEvent(false, Enum.KeyCode.F, false, game) -- Ép nhả block
             end
         end
     end)
@@ -162,10 +141,8 @@ local function AddBtn(name, y, callback)
     b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.SourceSansBold; b.TextSize = 20
     local state = false
     b.MouseButton1Click:Connect(function()
-        state = not state
-        b.Text = name .. (state and ": ON" or ": OFF")
-        b.TextColor3 = state and NeonRed or Color3.new(1,1,1)
-        callback(state)
+        state = not state; b.Text = name .. (state and ": ON" or ": OFF")
+        b.TextColor3 = state and NeonRed or Color3.new(1,1,1); callback(state)
     end)
 end
 
