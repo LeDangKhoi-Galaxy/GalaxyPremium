@@ -1,9 +1,9 @@
 --[[ 
-   GALAXY PREMIUM v10.5 - THE COMPLETE PERFECTION
-   - Fix: Thêm nút Bật/Tắt (Toggle) Menu cực tiện lợi.
-   - Speed: Loop Speed bất chấp Ragdoll/Stun/Bị đánh (v10.4).
-   - Auto Block: Thông minh, không block bừa bãi, không block người đang thủ.
-   - ESP & Aim: Chuẩn xác, mượt mà cho Mobile.
+   GALAXY PREMIUM v10.6 - FINAL UI FIXED
+   - Fix: Nút Toggle Menu hiện 100% (ZIndex High).
+   - Speed: Loop Speed Unstoppable (Ragdoll/Stun).
+   - Auto Block: Bản v10.3 chuẩn (No Idle/No Mimic).
+   - ESP & Aim: Hoàn hảo.
 ]]
 
 local Players = game:GetService("Players")
@@ -13,44 +13,53 @@ local VIM = game:GetService("VirtualInputManager")
 local Camera = workspace.CurrentCamera
 
 -- Dọn dẹp UI cũ
-local function Cleanup()
-    for _, ui in pairs(LP.PlayerGui:GetChildren()) do
-        if ui.Name:find("Galaxy") then ui:Destroy() end
-    end
+for _, ui in pairs(LP.PlayerGui:GetChildren()) do
+    if ui.Name:find("Galaxy") then ui:Destroy() end
 end
-Cleanup()
 
 local G = Instance.new("ScreenGui", LP.PlayerGui)
-G.Name = "GalaxyV10_5"
+G.Name = "GalaxyV10_6"
 G.ResetOnSpawn = false
+G.IgnoreGuiInset = true -- Để nút có thể nằm sát mép màn hình
 
 local NeonRed = Color3.fromRGB(255, 0, 0)
 local Dark = Color3.fromRGB(15, 15, 15)
 
--- [MỚI] NÚT BẬT/TẮT MENU
+-- KHUNG MENU CHÍNH
 local Main = Instance.new("Frame", G)
 Main.Size, Main.Position = UDim2.new(0, 180, 0, 380), UDim2.new(0.5, -90, 0.5, -190)
 Main.BackgroundColor3, Main.Active, Main.Draggable = Dark, true, true
-Main.Visible = true -- Mặc định hiện khi mới chạy
-Instance.new("UIStroke", Main).Color = NeonRed
+Main.Visible = true
+Main.ZIndex = 5
+local StrokeMain = Instance.new("UIStroke", Main)
+StrokeMain.Color = NeonRed
+StrokeMain.Thickness = 2
 
+-- [MỚI] NÚT TOGGLE CỰC CHUẨN
 local ToggleBtn = Instance.new("TextButton", G)
 ToggleBtn.Name = "ToggleGalaxy"
-ToggleBtn.Size = UDim2.new(0, 60, 0, 30)
-ToggleBtn.Position = UDim2.new(0, 10, 0.5, -15) -- Nằm bên trái màn hình
+ToggleBtn.Size = UDim2.new(0, 70, 0, 35)
+ToggleBtn.Position = UDim2.new(0, 10, 0, 100) -- Vị trí dưới nút Chat
 ToggleBtn.BackgroundColor3 = Dark
 ToggleBtn.TextColor3 = NeonRed
-ToggleBtn.Text = "MENU"
+ToggleBtn.Text = "GALAXY"
 ToggleBtn.Font = Enum.Font.SourceSansBold
 ToggleBtn.TextSize = 14
-Instance.new("UIStroke", ToggleBtn).Color = NeonRed
+ToggleBtn.ZIndex = 10 -- Đảm bảo luôn hiện trên cùng
+
+local StrokeBtn = Instance.new("UIStroke", ToggleBtn)
+StrokeBtn.Color = NeonRed
+StrokeBtn.Thickness = 1.5
+
+local CornerBtn = Instance.new("UICorner", ToggleBtn)
+CornerBtn.CornerRadius = UDim.new(0, 6)
 
 ToggleBtn.MouseButton1Click:Connect(function()
     Main.Visible = not Main.Visible
 end)
 
 local Title = Instance.new("TextLabel", Main)
-Title.Size, Title.Text = UDim2.new(1, 0, 0, 30), "GALAXY v10.5"
+Title.Size, Title.Text = UDim2.new(1, 0, 0, 30), "GALAXY v10.6"
 Title.BackgroundColor3, Title.TextColor3, Title.Font = NeonRed, Color3.new(1,1,1), Enum.Font.SourceSansBold
 
 local function createBtn(txt, pos, func)
@@ -69,20 +78,16 @@ local function createBtn(txt, pos, func)
 end
 
 -- =========================================
--- [1] UNSTOPPABLE LOOP SPEED (v10.4)
+-- LOGIC TÍNH NĂNG (GIỮ NGUYÊN HOÀN HẢO)
 -- =========================================
+
+-- SPEED LOOP
 _G.SpeedValue = 16
 RS.Stepped:Connect(function()
-    pcall(function()
-        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-            LP.Character.Humanoid.WalkSpeed = _G.SpeedValue
-        end
-    end)
+    pcall(function() if LP.Character and LP.Character:FindFirstChild("Humanoid") then LP.Character.Humanoid.WalkSpeed = _G.SpeedValue end end)
 end)
 
--- =========================================
--- [2] PRECISION AUTO BLOCK (v10.3)
--- =========================================
+-- AUTO BLOCK
 _G.AutoBlock = false
 local isHoldingF = false
 local IgnoreAnims = {"emoji", "dance", "emote", "rest", "idle", "walk", "run", "fall", "jump", "block", "guard", "hold"}
@@ -90,16 +95,13 @@ local IgnoreAnims = {"emoji", "dance", "emote", "rest", "idle", "walk", "run", "
 RS.RenderStepped:Connect(function()
     if _G.AutoBlock and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
         local shouldBlock = false
-        local myHRP = LP.Character.HumanoidRootPart
-        
         pcall(function()
             for _, v in pairs(Players:GetPlayers()) do
                 if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
                     local targetHRP = v.Character.HumanoidRootPart
-                    local dist = (myHRP.Position - targetHRP.Position).Magnitude
-                    
+                    local dist = (LP.Character.HumanoidRootPart.Position - targetHRP.Position).Magnitude
                     if dist <= 18 then
-                        local dot = (targetHRP.Position - myHRP.Position).Unit:Dot(targetHRP.Velocity.Unit)
+                        local dot = (targetHRP.Position - LP.Character.HumanoidRootPart.Position).Unit:Dot(targetHRP.Velocity.Unit)
                         if targetHRP.Velocity.Magnitude > 50 and dot < -0.75 then
                             shouldBlock = true
                         else
@@ -109,9 +111,8 @@ RS.RenderStepped:Connect(function()
                                     if t.IsPlaying then
                                         local n = t.Animation.Name:lower()
                                         local isIgnore = false
-                                        for _, word in pairs(IgnoreAnims) do if n:find(word) then isIgnore = true break end end
+                                        for _, w in pairs(IgnoreAnims) do if n:find(w) then isIgnore = true break end end
                                         local isM1_4 = n:find("final") or n:find("hit4") or n:find("last") or n:find("combo4")
-                                        
                                         if not isIgnore and not isM1_4 then
                                             local threshold = (dist < 8) and 0.72 or 0.9
                                             if t.WeightCurrent > threshold then shouldBlock = true; break end
@@ -125,20 +126,12 @@ RS.RenderStepped:Connect(function()
                 if shouldBlock then break end
             end
         end)
-        
-        if shouldBlock and not isHoldingF then
-            isHoldingF = true
-            VIM:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-        elseif not shouldBlock and isHoldingF then
-            isHoldingF = false
-            VIM:SendKeyEvent(false, Enum.KeyCode.F, false, game)
-        end
+        if shouldBlock and not isHoldingF then isHoldingF = true VIM:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+        elseif not shouldBlock and isHoldingF then isHoldingF = false VIM:SendKeyEvent(false, Enum.KeyCode.F, false, game) end
     end
 end)
 
--- =========================================
--- [3] SMART AIM & [4] PRO ESP
--- =========================================
+-- AIM & ESP
 createBtn("SMART AIM", 0, function(on)
     _G.Aim = on
     task.spawn(function()
