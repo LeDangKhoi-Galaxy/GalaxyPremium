@@ -1,9 +1,9 @@
 --[[ 
-   GALAXY PREMIUM by LeDangKhoi v12.2
-   - FIX TRIỆT ĐỂ: Force Unblock (Ép nhả Block vĩnh viễn khi áp sát).
-   - Combat: Tự động nhả F mỗi 0.05s nếu đối thủ ở gần < 5 studs để bạn đấm.
-   - Smart Aim: Infinite Range (Aim xa vô tận theo tâm Camera).
-   - ESP: Chữ siêu to v11.2, hiển thị HP và Khoảng cách.
+   GALAXY PREMIUM by LeDangKhoi v12.3
+   - FIX TRIỆT ĐỂ KẸT BLOCK: Tự động ngắt kết nối Block khi đối thủ áp sát < 6 studs.
+   - Combat: Đảm bảo 100% vung đấm M1 được khi đánh gần.
+   - Smart Aim: Infinite Range (Aim xa vô tận, quét theo tâm Camera).
+   - ESP: Chữ siêu to đỏ (v11.2), hiển thị đầy đủ HP và Khoảng cách.
 ]]
 
 local Players = game:GetService("Players")
@@ -12,17 +12,16 @@ local RS = game:GetService("RunService")
 local VIM = game:GetService("VirtualInputManager")
 local Camera = workspace.CurrentCamera
 
--- DỌN DẸP UI CŨ
+-- DỌN DẸP UI
 for _, v in pairs(LP.PlayerGui:GetChildren()) do
     if v.Name == "GalaxyKhoi" then v:Destroy() end
 end
 
 local G = Instance.new("ScreenGui", LP.PlayerGui)
 G.Name = "GalaxyKhoi"; G.ResetOnSpawn = false
-
 local NeonRed = Color3.fromRGB(255, 0, 0)
 
--- MENU FRAME (Thiết kế chuẩn LeDangKhoi)
+-- MENU FRAME
 local Main = Instance.new("Frame", G)
 Main.Size = UDim2.new(0, 220, 0, 400); Main.Position = UDim2.new(0.5, -110, 0.4, 0)
 Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20); Main.BorderSizePixel = 0
@@ -44,11 +43,10 @@ Instance.new("UIStroke", TBtn).Color = NeonRed
 
 -- BIẾN ĐIỀU KHIỂN
 _G.Speed = 16; _G.Fly = false; _G.AutoBlock = false; _G.Aim = false; _G.ESP = false
-
 local Ignore = {"idle", "walk", "run", "jump", "fall", "dance", "emote"}
 
 -- =========================================
--- HỆ THỐNG XỬ LÝ MASTER v12.2
+-- HỆ THỐNG XỬ LÝ MASTER v12.3
 -- =========================================
 RS.Heartbeat:Connect(function()
     pcall(function()
@@ -58,7 +56,7 @@ RS.Heartbeat:Connect(function()
             
             local myHRP = LP.Character.HumanoidRootPart
             local shouldBlock = false
-            local forceUnblock = false -- Biến mới để ép nhả F
+            local tooClose = false -- Biến kiểm tra áp sát cực gần
             local closestTarget = nil
             local minFOVDist = math.huge
             
@@ -93,11 +91,11 @@ RS.Heartbeat:Connect(function()
                         v.Character.Head.G_Tag.Info.Text = v.Name .. "\nHP: " .. math.floor(v.Character.Humanoid.Health) .. "\nDist: " .. math.floor(dist) .. "m"
                     end
 
-                    -- C. AUTO BLOCK v12.2 (Force Unblock Logic)
-                    if _G.AutoBlock and dist < 28 then
-                        if dist <= 5.5 then 
-                            forceUnblock = true -- Đánh dấu phải ép nhả F khi quá gần
-                        else
+                    -- C. AUTO BLOCK v12.3 (The Final Fix)
+                    if _G.AutoBlock then
+                        if dist < 6.5 then
+                            tooClose = true -- Đánh dấu áp sát để ngắt block hoàn toàn
+                        elseif dist < 28 then
                             local anim = v.Character.Humanoid:FindFirstChildOfClass("Animator")
                             if anim then
                                 for _, t in pairs(anim:GetPlayingAnimationTracks()) do
@@ -105,7 +103,7 @@ RS.Heartbeat:Connect(function()
                                         local n = t.Animation.Name:lower()
                                         local isIgnore = false
                                         for _, w in pairs(Ignore) do if n:find(w) then isIgnore = true break end end
-                                        if not isIgnore and t.WeightCurrent > 0.4 then shouldBlock = true; break end
+                                        if not isIgnore and t.WeightCurrent > 0.45 then shouldBlock = true; break end
                                     end
                                 end
                             end
@@ -120,13 +118,14 @@ RS.Heartbeat:Connect(function()
                 LP.Character.HumanoidRootPart.CFrame = CFrame.lookAt(LP.Character.HumanoidRootPart.Position, Vector3.new(closestTarget.Position.X, LP.Character.HumanoidRootPart.Position.Y, closestTarget.Position.Z))
             end
             
-            -- E. ĐIỀU KHIỂN BLOCK (Master Logic)
+            -- E. ĐIỀU KHIỂN BLOCK (Ngắt kết nối khi quá gần)
             if _G.AutoBlock then
-                if forceUnblock then
-                    -- ÉP NHẢ PHÍM F LIÊN TỤC ĐỂ ĐẤM
+                if tooClose then
+                    -- KHI QUÁ GẦN: ÉP NHẢ F VÀ KHÔNG NHẤN LẠI
                     VIM:SendKeyEvent(false, Enum.KeyCode.F, false, game)
                 else
                     VIM:SendKeyEvent(shouldBlock, Enum.KeyCode.F, false, game)
+                    if not shouldBlock then VIM:SendKeyEvent(false, Enum.KeyCode.F, false, game) end
                 end
             end
         end
