@@ -1,16 +1,19 @@
 --[[ 
-   GALAXY PREMIUM by LeDangKhoi v11.6
-   - Fix Auto Block: Chống kẹt block khi áp sát, ưu tiên tấn công.
-   - Fix Smart Aim: Tăng tầm khóa mục tiêu (Không còn giới hạn 7 studs).
-   - Performance: Tối ưu hóa tuyệt đối cho Samsung A32.
+   GALAXY PREMIUM by LeDangKhoi v11.7
+   - Fix Smart Aim: Infinite Range (Phạm vi vô tận), lia camera quét người gần nhất.
+   - Mechanism: FOVC Aim (Aim người gần tâm màn hình nhất).
+   - Auto Block: v11.6 Smart Filter (Chống kẹt block khi áp sát).
+   - Speed: Unstoppable (Duy trì tốc độ xuyên Ragdoll/Stun).
+   - Performance: Tối ưu cho Samsung A32.
 ]]
 
 local Players = game:GetService("Players")
 local LP = Players.LocalPlayer
 local RS = game:GetService("RunService")
 local VIM = game:GetService("VirtualInputManager")
+local Camera = workspace.CurrentCamera
 
--- DỌN DẸP UI
+-- DỌN DẸP UI CŨ
 for _, v in pairs(LP.PlayerGui:GetChildren()) do
     if v.Name == "GalaxyKhoi" then v:Destroy() end
 end
@@ -21,7 +24,7 @@ G.ResetOnSpawn = false
 
 local NeonRed = Color3.fromRGB(255, 0, 0)
 
--- MENU FRAME
+-- MENU FRAME (Chữ siêu to v11.2 Style)
 local Main = Instance.new("Frame", G)
 Main.Size = UDim2.new(0, 220, 0, 400)
 Main.Position = UDim2.new(0.5, -110, 0.4, 0)
@@ -57,40 +60,50 @@ _G.AutoBlock = false
 _G.Aim = false
 _G.ESP = false
 
-local currentTargetHRP = nil
 local Ignore = {"idle", "walk", "run", "jump", "fall", "block", "guard", "hold", "dance", "emote"}
 
 -- =========================================
--- HỆ THỐNG XỬ LÝ CHÍNH (v11.6)
+-- HỆ THỐNG QUẢN LÝ LUỒNG TẬP TRUNG (v11.7)
 -- =========================================
-RS.Stepped:Connect(function()
+RS.Heartbeat:Connect(function()
     pcall(function()
         if LP.Character and LP.Character:FindFirstChild("Humanoid") then
             -- 1. Unstoppable Speed
             LP.Character.Humanoid.WalkSpeed = _G.Speed
             
-            -- 2. Fly
+            -- 2. Fly Logic
             if _G.Fly then LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 50, 0) end
             
             local myHRP = LP.Character.HumanoidRootPart
-            local minDP = math.huge
-            local tempTarget = nil
             local shouldBlock = false
+            
+            -- Biến tìm mục tiêu cho Smart Aim (FOVC Mechanism)
+            local closestTarget = nil
+            local minFOVDist = math.huge -- Tìm người gần tâm màn hình nhất
             
             for _, v in pairs(Players:GetPlayers()) do
                 if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
                     local hrp = v.Character.HumanoidRootPart
                     local dist = (myHRP.Position - hrp.Position).Magnitude
                     
-                    -- SMART AIM LOGIC (Mở rộng tầm khóa mục tiêu)
-                    if v.Character.Humanoid.Health > 0 and dist < 100 then 
-                        if dist < minDP then
-                            minDP = dist
-                            tempTarget = hrp
+                    -- A. SMART AIM LOGIC (v11.7 - Infinite FOVC)
+                    if _G.Aim and v.Character.Humanoid.Health > 0 then
+                        -- Kiểm tra đối thủ có nằm trong tầm nhìn Camera không
+                        local screenPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+                        if onScreen then
+                            -- Tính khoảng cách từ đối thủ đến tâm màn hình
+                            local screenCenter = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+                            local fovDist = (screenCenter - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
+                            
+                            -- Không giới hạn khoảng cách, chỉ quan tâm độ gần tâm màn hình
+                            if fovDist < minFOVDist then
+                                minFOVDist = fovDist
+                                closestTarget = hrp
+                            end
                         end
                     end
                     
-                    -- ESP (Chữ siêu to v11.2)
+                    -- B. ESP (Chữ siêu to v11.2)
                     if _G.ESP then
                         if not v.Character:FindFirstChild("G_Chams") then
                             local h = Instance.new("Highlight", v.Character)
@@ -109,7 +122,7 @@ RS.Stepped:Connect(function()
                         if v.Character.Head:FindFirstChild("G_Tag") then v.Character.Head.G_Tag:Destroy() end
                     end
 
-                    -- AUTO BLOCK FIX (Chống kẹt khi áp sát)
+                    -- C. AUTO BLOCK v11.6 Smart Filter (Chống kẹt khi áp sát)
                     if _G.AutoBlock and dist < 25 then
                         local anim = v.Character.Humanoid:FindFirstChildOfClass("Animator")
                         if anim then
@@ -119,7 +132,7 @@ RS.Stepped:Connect(function()
                                     local isIgnore = false
                                     for _, w in pairs(Ignore) do if n:find(w) then isIgnore = true break end end
                                     
-                                    -- Logic mới: Càng gần càng yêu cầu trọng số đòn đánh cao hơn để Block
+                                    -- Logic: Càng gần càng yêu cầu trọng số đòn đánh cao hơn để Block
                                     local sensitivity = (dist < 10) and 0.92 or 0.65
                                     if not isIgnore and t.WeightCurrent > sensitivity then 
                                         shouldBlock = true; break 
@@ -132,23 +145,23 @@ RS.Stepped:Connect(function()
                 end
             end
             
-            currentTargetHRP = tempTarget
+            -- D. THỰC THI SMART AIM (v11.7 - Infinite sniper)
+            if _G.Aim and closestTarget then
+                LP.Character.HumanoidRootPart.CFrame = CFrame.lookAt(
+                    LP.Character.HumanoidRootPart.Position, 
+                    Vector3.new(closestTarget.Position.X, LP.Character.HumanoidRootPart.Position.Y, closestTarget.Position.Z)
+                )
+            end
+            
+            -- E. Thực thi Block
             if _G.AutoBlock then VIM:SendKeyEvent(shouldBlock, Enum.KeyCode.F, false, game) end
         end
     end)
 end)
 
--- AIM MƯỢT MÀ (RenderStepped)
-RS.RenderStepped:Connect(function()
-    if _G.Aim and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") and currentTargetHRP then
-        LP.Character.HumanoidRootPart.CFrame = CFrame.lookAt(
-            LP.Character.HumanoidRootPart.Position, 
-            Vector3.new(currentTargetHRP.Position.X, LP.Character.HumanoidRootPart.Position.Y, currentTargetHRP.Position.Z)
-        )
-    end
-end)
-
--- UI BUILDER (CHỮ TO)
+-- =========================================
+-- UI BUILDER (CHỮ TO SIÊU NÉT)
+-- =========================================
 local function AddBtn(name, y, callback)
     local b = Instance.new("TextButton", Main)
     b.Size = UDim2.new(1, -20, 0, 45); b.Position = UDim2.new(0, 10, 0, y)
