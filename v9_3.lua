@@ -1,9 +1,9 @@
 --[[ 
-   GALAXY PREMIUM by LeDangKhoi v12.1
-   - Fix Vĩnh Viễn: Không còn kẹt Block ở cự ly gần (1-4 studs).
-   - Logic: Ưu tiên tấn công, ép nhả Block liên tục khi áp sát.
-   - Smart Aim: Infinite Range FOVC (Khóa mục tiêu xa theo tâm màn hình).
-   - Speed: Unstoppable (Chống Ragdoll/Stun).
+   GALAXY PREMIUM by LeDangKhoi v12.2
+   - FIX TRIỆT ĐỂ: Force Unblock (Ép nhả Block vĩnh viễn khi áp sát).
+   - Combat: Tự động nhả F mỗi 0.05s nếu đối thủ ở gần < 5 studs để bạn đấm.
+   - Smart Aim: Infinite Range (Aim xa vô tận theo tâm Camera).
+   - ESP: Chữ siêu to v11.2, hiển thị HP và Khoảng cách.
 ]]
 
 local Players = game:GetService("Players")
@@ -12,7 +12,7 @@ local RS = game:GetService("RunService")
 local VIM = game:GetService("VirtualInputManager")
 local Camera = workspace.CurrentCamera
 
--- DỌN DẸP UI
+-- DỌN DẸP UI CŨ
 for _, v in pairs(LP.PlayerGui:GetChildren()) do
     if v.Name == "GalaxyKhoi" then v:Destroy() end
 end
@@ -22,7 +22,7 @@ G.Name = "GalaxyKhoi"; G.ResetOnSpawn = false
 
 local NeonRed = Color3.fromRGB(255, 0, 0)
 
--- MENU FRAME
+-- MENU FRAME (Thiết kế chuẩn LeDangKhoi)
 local Main = Instance.new("Frame", G)
 Main.Size = UDim2.new(0, 220, 0, 400); Main.Position = UDim2.new(0.5, -110, 0.4, 0)
 Main.BackgroundColor3 = Color3.fromRGB(20, 20, 20); Main.BorderSizePixel = 0
@@ -48,7 +48,7 @@ _G.Speed = 16; _G.Fly = false; _G.AutoBlock = false; _G.Aim = false; _G.ESP = fa
 local Ignore = {"idle", "walk", "run", "jump", "fall", "dance", "emote"}
 
 -- =========================================
--- HỆ THỐNG XỬ LÝ MASTER v12.1
+-- HỆ THỐNG XỬ LÝ MASTER v12.2
 -- =========================================
 RS.Heartbeat:Connect(function()
     pcall(function()
@@ -58,6 +58,7 @@ RS.Heartbeat:Connect(function()
             
             local myHRP = LP.Character.HumanoidRootPart
             local shouldBlock = false
+            local forceUnblock = false -- Biến mới để ép nhả F
             local closestTarget = nil
             local minFOVDist = math.huge
             
@@ -66,7 +67,7 @@ RS.Heartbeat:Connect(function()
                     local hrp = v.Character.HumanoidRootPart
                     local dist = (myHRP.Position - hrp.Position).Magnitude
                     
-                    -- A. SMART AIM (FOVC Infinite)
+                    -- A. SMART AIM (Infinite Range)
                     if _G.Aim and v.Character.Humanoid.Health > 0 then
                         local screenPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
                         if onScreen then
@@ -76,7 +77,7 @@ RS.Heartbeat:Connect(function()
                         end
                     end
                     
-                    -- B. ESP CHỮ SIÊU TO
+                    -- B. ESP (v11.2 Style)
                     if _G.ESP then
                         if not v.Character:FindFirstChild("G_Chams") then
                             local h = Instance.new("Highlight", v.Character)
@@ -92,11 +93,10 @@ RS.Heartbeat:Connect(function()
                         v.Character.Head.G_Tag.Info.Text = v.Name .. "\nHP: " .. math.floor(v.Character.Humanoid.Health) .. "\nDist: " .. math.floor(dist) .. "m"
                     end
 
-                    -- C. AUTO BLOCK v12.1 (Anti-Jam Logic)
-                    if _G.AutoBlock and dist < 25 then
-                        -- CHỐNG KẸT: Nếu dưới 4.5 studs, ép nhả phím F để có thể đấm
-                        if dist <= 4.5 then
-                            shouldBlock = false
+                    -- C. AUTO BLOCK v12.2 (Force Unblock Logic)
+                    if _G.AutoBlock and dist < 28 then
+                        if dist <= 5.5 then 
+                            forceUnblock = true -- Đánh dấu phải ép nhả F khi quá gần
                         else
                             local anim = v.Character.Humanoid:FindFirstChildOfClass("Animator")
                             if anim then
@@ -105,10 +105,7 @@ RS.Heartbeat:Connect(function()
                                         local n = t.Animation.Name:lower()
                                         local isIgnore = false
                                         for _, w in pairs(Ignore) do if n:find(w) then isIgnore = true break end end
-                                        -- Cự ly xa vẫn block nhạy để chặn Skill
-                                        if not isIgnore and t.WeightCurrent > 0.45 then 
-                                            shouldBlock = true; break 
-                                        end
+                                        if not isIgnore and t.WeightCurrent > 0.4 then shouldBlock = true; break end
                                     end
                                 end
                             end
@@ -123,11 +120,13 @@ RS.Heartbeat:Connect(function()
                 LP.Character.HumanoidRootPart.CFrame = CFrame.lookAt(LP.Character.HumanoidRootPart.Position, Vector3.new(closestTarget.Position.X, LP.Character.HumanoidRootPart.Position.Y, closestTarget.Position.Z))
             end
             
-            -- E. ĐIỀU KHIỂN BLOCK LINH HOẠT
+            -- E. ĐIỀU KHIỂN BLOCK (Master Logic)
             if _G.AutoBlock then
-                VIM:SendKeyEvent(shouldBlock, Enum.KeyCode.F, false, game)
-                if not shouldBlock then
-                    VIM:SendKeyEvent(false, Enum.KeyCode.F, false, game) -- Luôn đảm bảo nhả phím khi không cần thiết
+                if forceUnblock then
+                    -- ÉP NHẢ PHÍM F LIÊN TỤC ĐỂ ĐẤM
+                    VIM:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+                else
+                    VIM:SendKeyEvent(shouldBlock, Enum.KeyCode.F, false, game)
                 end
             end
         end
