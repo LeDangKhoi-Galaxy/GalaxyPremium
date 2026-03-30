@@ -1,14 +1,13 @@
 --[[ 
-   GALAXY Premium v16.9.1 - RE-ADDED CLOSE BUTTON
-   - FIXED: Nút HỦY SCRIPT đã quay trở lại.
-   - FEATURES: View Player, Loop Speed v16.0, Fly, Player Tools.
-   - OPTIMIZED: Samsung A32.
+   GALAXY Premium v16.9.2 - UI LOGIC FIXED
+   - FIXED: Nút GALAXY không còn tắt Menu Player Tool đột ngột.
+   - CONTROL: Menu Player chỉ đóng/mở khi nhấn nút "PLAYER TOOLS" ở Menu Chính.
+   - FEATURES: View, TP, Fling, Loop Speed v16.0.
 ]]
 
 local Players = game:GetService("Players")
 local LP = Players.LocalPlayer
 local RS = game:GetService("RunService")
-local VIM = game:GetService("VirtualInputManager")
 local Camera = workspace.CurrentCamera
 
 --// BIẾN ĐIỀU KHIỂN
@@ -25,7 +24,7 @@ G.Name = "GalaxyKhoi"; G.ResetOnSpawn = false
 local NeonRed = Color3.fromRGB(255, 0, 0)
 
 -- =========================================
--- MENU CHÍNH & MENU PLAYER
+-- KHỞI TẠO MENU (MAIN & PLAYER)
 -- =========================================
 local Main = Instance.new("Frame", G); Main.Size = UDim2.new(0, 220, 0, 480); Main.Position = UDim2.new(0.5, -230, 0.3, 0); Main.BackgroundColor3 = Color3.fromRGB(10, 10, 10); Main.Active = true; Main.Draggable = true
 local PMenu = Instance.new("Frame", G); PMenu.Size = UDim2.new(0, 200, 0, 400); PMenu.Position = UDim2.new(0.5, 10, 0.3, 0); PMenu.BackgroundColor3 = Color3.fromRGB(10, 10, 10); PMenu.Active = true; PMenu.Draggable = true; PMenu.Visible = false
@@ -34,7 +33,7 @@ Instance.new("UIStroke", Main).Color = NeonRed; Instance.new("UIStroke", PMenu).
 local function AddTitle(p, txt)
     local t = Instance.new("TextLabel", p); t.Size = UDim2.new(1,0,0,40); t.BackgroundColor3 = NeonRed; t.Text = txt; t.TextColor3 = Color3.new(1,1,1); t.Font = Enum.Font.SourceSansBold; t.TextSize = 16
 end
-AddTitle(Main, "GALAXY Premium - LeDangKhoi "); AddTitle(PMenu, "PLAYER TOOLS")
+AddTitle(Main, "GALAXY Premium - LeDangKhoi"); AddTitle(PMenu, "PLAYER TOOLS")
 
 --// HÀM TÌM PLAYER
 local function GetPlayer(name)
@@ -46,7 +45,7 @@ local function GetPlayer(name)
 end
 
 -- =========================================
--- HỆ THỐNG LOOP & SPECTATE
+-- HỆ THỐNG XỬ LÝ (LOOP SPEED & TOOLS)
 -- =========================================
 RS.Stepped:Connect(function()
     pcall(function()
@@ -81,13 +80,11 @@ end
 AddBtn(Main, "SMART AIM", 50, function(v) _G.Aim = v end)
 AddBtn(Main, "AUTO BLOCK", 105, function(v) _G.AutoBlock = v end)
 AddBtn(Main, "FLY MODE", 160, function(v) _G.Fly = v end)
-AddBtn(Main, "PLAYER TOOLS", 215, function(v) PMenu.Visible = v end)
+AddBtn(Main, "PLAYER TOOLS", 215, function(v) PMenu.Visible = v end) -- NÚT ĐIỀU KHIỂN RIÊNG
 
 local Inp = Instance.new("TextBox", Main); Inp.Size = UDim2.new(1, -20, 0, 45); Inp.Position = UDim2.new(0, 10, 0, 270); Inp.BackgroundColor3 = Color3.fromRGB(20,20,20); Inp.Text = "LOOP SPEED (16)"; Inp.TextColor3 = NeonRed; Inp.Font = Enum.Font.SourceSansBold; Inp.TextSize = 16; Inp.FocusLost:Connect(function() _G.Speed = tonumber(Inp.Text) or 16 end)
 
--- NÚT HỦY SCRIPT (ĐÃ QUAY LẠI)
-local Close = Instance.new("TextButton", Main); Close.Size = UDim2.new(1, -20, 0, 45); Close.Position = UDim2.new(0, 10, 0, 325); Close.BackgroundColor3 = Color3.fromRGB(40, 0, 0); Close.Text = "HỦY SCRIPT"; Close.TextColor3 = Color3.new(1, 1, 1); Close.Font = Enum.Font.SourceSansBold; Close.TextSize = 18
-Close.MouseButton1Click:Connect(function() G:Destroy(); _G.Viewing = false; Camera.CameraSubject = LP.Character.Humanoid end)
+local Close = Instance.new("TextButton", Main); Close.Size = UDim2.new(1, -20, 0, 45); Close.Position = UDim2.new(0, 10, 0, 325); Close.BackgroundColor3 = Color3.fromRGB(40, 0, 0); Close.Text = "HỦY SCRIPT"; Close.TextColor3 = Color3.new(1, 1, 1); Close.Font = Enum.Font.SourceSansBold; Close.TextSize = 18; Close.MouseButton1Click:Connect(function() G:Destroy(); _G.Viewing = false; Camera.CameraSubject = LP.Character.Humanoid end)
 
 -- PLAYER MENU CONTENT
 local TInp = Instance.new("TextBox", PMenu); TInp.Size = UDim2.new(1,-20,0,40); TInp.Position = UDim2.new(0,10,0,50); TInp.BackgroundColor3 = Color3.fromRGB(30,30,30); TInp.Text = "TÊN ĐỐI THỦ..."; TInp.TextColor3 = Color3.new(1,1,1); TInp.FocusLost:Connect(function() _G.TargetName = TInp.Text end)
@@ -95,6 +92,9 @@ AddBtn(PMenu, "VIEW PLAYER", 100, function(v) _G.Viewing = v end)
 AddBtn(PMenu, "LOOP TELEPORT", 155, function(v) _G.LoopTP = v end)
 AddBtn(PMenu, "LOOP FLING", 210, function(v) _G.LoopFling = v end)
 
--- TOGGLE GALAXY
+-- TOGGLE GALAXY (CHỈ ĐÓNG/MỞ MENU CHÍNH)
 local TBtn = Instance.new("TextButton", G); TBtn.Size = UDim2.new(0,70,0,35); TBtn.Position = UDim2.new(0,10,0.5,0); TBtn.BackgroundColor3 = Color3.new(0,0,0); TBtn.Text = "GALAXY"; TBtn.TextColor3 = NeonRed; Instance.new("UIStroke", TBtn).Color = NeonRed
-TBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible; PMenu.Visible = false end)
+TBtn.MouseButton1Click:Connect(function() 
+    Main.Visible = not Main.Visible 
+    -- ĐÃ XÓA DÒNG: PMenu.Visible = false
+end)
