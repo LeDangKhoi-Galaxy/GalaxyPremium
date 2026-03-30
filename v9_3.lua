@@ -140,7 +140,7 @@ end
 
 AddBtn("SMART AIM", 50, function(v) _G.Aim = v end)
 AddBtn("AUTO BLOCK", 105, function(v) _G.AutoBlock = v end)
-AddBtn("FLY (V16 SPEED)", 160, function(v) _G.Fly = v end)
+AddBtn("FLY", 160, function(v) _G.Fly = v end)
 AddBtn("PLAYER ESP", 215, function(v) _G.ESP = v end)
 
 local Inp = Instance.new("TextBox", Main); Inp.Size = UDim2.new(1, -20, 0, 45); Inp.Position = UDim2.new(0, 10, 0, 270); Inp.BackgroundColor3 = Color3.fromRGB(20,20,20); Inp.Text = "SET SPEED (16)"; Inp.TextColor3 = NeonRed; Inp.Font = Enum.Font.SourceSansBold; Inp.TextSize = 18; Inp.FocusLost:Connect(function() _G.Speed = tonumber(Inp.Text) or 16 end)
