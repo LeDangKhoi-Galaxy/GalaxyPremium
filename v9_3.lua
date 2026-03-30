@@ -133,7 +133,7 @@ local function AddMainBtn(n, y, c)
     local s = false; b.MouseButton1Click:Connect(function() s = not s; b.Text = n..(s and ": ON" or ": OFF"); b.TextColor3 = s and NeonRed or Color3.new(1,1,1); c(s) end)
 end
 
-AddMainBtn("AIMBOT", 50, function(v) _G.Aim = v end)
+AddMainBtn("SMART AIM", 50, function(v) _G.Aim = v end)
 AddMainBtn("AUTO BLOCK", 105, function(v) _G.AutoBlock = v end)
 AddMainBtn("FLY MODE", 160, function(v) _G.Fly = v end)
 AddMainBtn("PLAYER ESP", 215, function(v) _G.ESP = v end)
