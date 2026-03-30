@@ -110,7 +110,7 @@ local PMenu = Instance.new("Frame", G); PMenu.Size = UDim2.new(0, 200, 0, 450); 
 Instance.new("UIStroke", Main).Color = NeonRed; Instance.new("UIStroke", PMenu).Color = NeonRed
 
 -- === CẬP NHẬT FONT CHO TITLE MENU ===
-local t1 = Instance.new("TextLabel", Main); t1.Size = UDim2.new(1,0,0,40); t1.BackgroundColor3 = NeonRed; t1.Text = "GALAXY PREMIUM"; t1.TextColor3 = Color3.new(1,1,1); 
+local t1 = Instance.new("TextLabel", Main); t1.Size = UDim2.new(1,0,0,40); t1.BackgroundColor3 = NeonRed; t1.Text = "GALAXY PREMIUM - LeDangKhoi"; t1.TextColor3 = Color3.new(1,1,1); 
 t1.Font = CoolFont; -- Đã đổi font SciFi
 t1.TextSize = 20
 local t2 = Instance.new("TextLabel", PMenu); t2.Size = UDim2.new(1,0,0,40); t2.BackgroundColor3 = NeonRed; t2.Text = "PLAYER TOOLS"; t2.TextColor3 = Color3.new(1,1,1); 
