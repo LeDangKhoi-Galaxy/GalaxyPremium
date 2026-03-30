@@ -93,7 +93,7 @@ Instance.new("UIStroke", SubMenu).Color = NeonRed
 local function CreateTitle(p, txt)
     local T = Instance.new("TextLabel", p); T.Size = UDim2.new(1, 0, 0, 40); T.BackgroundColor3 = NeonRed; T.Text = txt; T.TextColor3 = Color3.new(1,1,1); T.Font = Enum.Font.SourceSansBold; T.TextSize = 16
 end
-CreateTitle(Main, "GALAXY Premium - Main")
+CreateTitle(Main, "GALAXY Premium - LeDangKhoi")
 CreateTitle(SubMenu, "PLAYER TOOL")
 
 local ToggleBtn = Instance.new("TextButton", G)
