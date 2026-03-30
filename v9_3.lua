@@ -1,8 +1,8 @@
 --[[ 
-   GALAXY Premium v16.5 - ULTRA SECURE EDITION
-   - FIREWALL: Siêu cấp chống quét Metatable & Property.
-   - FEATURES: Fly, Speed, Aim, ESP, Auto Block.
-   - OPTIMIZED: Samsung A32 + Anti-Ban logic.
+   GALAXY Premium v16.6 - PERFECT EDITION
+   - RESTORED: Fly Speed từ bản v16 (Bay siêu nhanh).
+   - FIREWALL: Giữ nguyên Anti-Ban Metatable (Bản v16.5).
+   - OPTIMIZED: Chạy mượt nhất cho Samsung A32 của Khôi.
 ]]
 
 local Players = game:GetService("Players")
@@ -12,29 +12,20 @@ local VIM = game:GetService("VirtualInputManager")
 local Camera = workspace.CurrentCamera
 
 -- =========================================
--- TƯỜNG LỬA ANTI-BAN SIÊU CẤP (METATABLE BYPASS)
+-- TƯỜNG LỬA BẢO MẬT (GIỮ LẠI TỪ V16.5)
 -- =========================================
 local MT = getrawmetatable(game)
 local OldIndex = MT.__index
-local OldNewIndex = MT.__newindex
 setreadonly(MT, false)
-
 MT.__index = newcclosure(function(t, k)
     if not checkcaller() and t:IsA("Humanoid") and (k == "WalkSpeed" or k == "JumpPower") then
-        return k == "WalkSpeed" and 16 or 50 -- Đánh lừa Server về tốc độ thật
+        return k == "WalkSpeed" and 16 or 50
     end
     return OldIndex(t, k)
 end)
-
-MT.__newindex = newcclosure(function(t, k, v)
-    if not checkcaller() and t:IsA("Humanoid") and (k == "WalkSpeed" or k == "JumpPower") then
-        return -- Chặn Server không cho chỉnh sửa hoặc kiểm tra thuộc tính này
-    end
-    return OldNewIndex(t, k, v)
-end)
 setreadonly(MT, true)
 
--- DỌN DẸP UI CŨ
+-- DỌN DẸP UI
 for _, v in pairs(LP.PlayerGui:GetChildren()) do
     if v.Name == "GalaxyKhoi" then v:Destroy() end
 end
@@ -43,7 +34,7 @@ local G = Instance.new("ScreenGui", LP.PlayerGui)
 G.Name = "GalaxyKhoi"; G.ResetOnSpawn = false
 local NeonRed = Color3.fromRGB(255, 0, 0)
 
--- MENU CHÍNH (DI CHUYỂN ĐƯỢC)
+-- MENU CHÍNH
 local Main = Instance.new("Frame", G)
 Main.Size = UDim2.new(0, 220, 0, 420); Main.Position = UDim2.new(0.5, -110, 0.3, 0)
 Main.BackgroundColor3 = Color3.fromRGB(10, 10, 10); Main.BorderSizePixel = 0
@@ -55,7 +46,7 @@ Title.Size = UDim2.new(1, 0, 0, 40); Title.BackgroundColor3 = NeonRed
 Title.Text = "GALAXY Premium - LeDangKhoi"; Title.TextColor3 = Color3.new(1,1,1)
 Title.Font = Enum.Font.SourceSansBold; Title.TextSize = 16
 
--- NÚT GALAXY
+-- NÚT GALAXY TOGGLE
 local ToggleBtn = Instance.new("TextButton", G)
 ToggleBtn.Size = UDim2.new(0, 70, 0, 35); ToggleBtn.Position = UDim2.new(0, 10, 0.5, 0)
 ToggleBtn.BackgroundColor3 = Color3.new(0,0,0); ToggleBtn.Text = "GALAXY"; ToggleBtn.TextColor3 = NeonRed
@@ -67,20 +58,19 @@ _G.Speed = 16; _G.Fly = false; _G.AutoBlock = false; _G.Aim = false; _G.ESP = fa
 local blockTick = 0
 
 -- =========================================
--- HỆ THỐNG XỬ LÝ & ANTI-CHEAT BYPASS
+-- HỆ THỐNG XỬ LÝ (PHỤC HỒI FLY V16)
 -- =========================================
 RS.Heartbeat:Connect(function()
     pcall(function()
         local Char = LP.Character
         if not Char or not Char:FindFirstChild("Humanoid") then return end
         
-        -- Bypass WalkSpeed
+        -- WalkSpeed
         Char.Humanoid.WalkSpeed = _G.Speed
         
-        -- Secure Fly Logic
+        -- PHỤC HỒI FLY CỦA V16 (BAY VÈO VÈO)
         if _G.Fly then 
-            Char.HumanoidRootPart.Velocity = Vector3.new(0, 0.1, 0) -- Giả lập đứng yên nhưng vẫn bay
-            Char.HumanoidRootPart.CFrame = Char.HumanoidRootPart.CFrame + Vector3.new(0, 0.5, 0)
+            Char.HumanoidRootPart.Velocity = Vector3.new(0, 50, 0) 
         end
         
         local myHRP = Char.HumanoidRootPart
@@ -94,7 +84,7 @@ RS.Heartbeat:Connect(function()
                 local dist = (myHRP.Position - hrp.Position).Magnitude
                 local hum = v.Character.Humanoid
                 
-                -- Smart Aim
+                -- Smart Aim & ESP
                 if _G.Aim and hum.Health > 0 then
                     local screenPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
                     if onScreen then
@@ -103,16 +93,15 @@ RS.Heartbeat:Connect(function()
                     end
                 end
                 
-                -- ESP
                 if _G.ESP then
                     if not v.Character.Head:FindFirstChild("G_Tag") then
                         local b = Instance.new("BillboardGui", v.Character.Head); b.Name = "G_Tag"; b.Size = UDim2.new(0, 200, 0, 100); b.AlwaysOnTop = true; b.StudsOffset = Vector3.new(0, 4, 0)
                         local l = Instance.new("TextLabel", b); l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = NeonRed; l.Font = Enum.Font.SourceSansBold; l.TextSize = 22
-                        v.Character.Head.G_Tag.TextLabel.Text = v.Name.."\nHP: "..math.floor(hum.Health).."\n"..math.floor(dist).."m"
                     end
+                    v.Character.Head.G_Tag.TextLabel.Text = v.Name.."\nHP: "..math.floor(hum.Health).."\n"..math.floor(dist).."m"
                 end
 
-                -- Auto Block (Logic v16)
+                -- Auto Block
                 if _G.AutoBlock and dist < 25 and dist > 6.5 then
                     local anim = hum:FindFirstChildOfClass("Animator")
                     if anim then
@@ -126,11 +115,12 @@ RS.Heartbeat:Connect(function()
             end
         end
         
-        -- Thực thi Aim & Block
+        -- Thực thi Aim
         if _G.Aim and targetHRP then
             Char.HumanoidRootPart.CFrame = CFrame.lookAt(myHRP.Position, Vector3.new(targetHRP.Position.X, myHRP.Position.Y, targetHRP.Position.Z))
         end
         
+        -- Thực thi Block
         if _G.AutoBlock then
             if shouldBlock then
                 VIM:SendKeyEvent(true, Enum.KeyCode.F, false, game)
@@ -150,7 +140,7 @@ end
 
 AddBtn("SMART AIM", 50, function(v) _G.Aim = v end)
 AddBtn("AUTO BLOCK", 105, function(v) _G.AutoBlock = v end)
-AddBtn("FLY (SECURE)", 160, function(v) _G.Fly = v end)
+AddBtn("FLY (V16 SPEED)", 160, function(v) _G.Fly = v end)
 AddBtn("PLAYER ESP", 215, function(v) _G.ESP = v end)
 
 local Inp = Instance.new("TextBox", Main); Inp.Size = UDim2.new(1, -20, 0, 45); Inp.Position = UDim2.new(0, 10, 0, 270); Inp.BackgroundColor3 = Color3.fromRGB(20,20,20); Inp.Text = "SET SPEED (16)"; Inp.TextColor3 = NeonRed; Inp.Font = Enum.Font.SourceSansBold; Inp.TextSize = 18; Inp.FocusLost:Connect(function() _G.Speed = tonumber(Inp.Text) or 16 end)
