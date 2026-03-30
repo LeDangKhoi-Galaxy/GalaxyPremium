@@ -34,7 +34,7 @@ Instance.new("UIStroke", Main).Color = NeonRed; Instance.new("UIStroke", PMenu).
 local function AddTitle(p, txt)
     local t = Instance.new("TextLabel", p); t.Size = UDim2.new(1,0,0,40); t.BackgroundColor3 = NeonRed; t.Text = txt; t.TextColor3 = Color3.new(1,1,1); t.Font = Enum.Font.SourceSansBold; t.TextSize = 16
 end
-AddTitle(Main, "GALAXY v16.9.1 - MAIN"); AddTitle(PMenu, "PLAYER TOOLS")
+AddTitle(Main, "GALAXY Premium - LeDangKhoi "); AddTitle(PMenu, "PLAYER TOOLS")
 
 --// HÀM TÌM PLAYER
 local function GetPlayer(name)
