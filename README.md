@@ -1,5 +1,5 @@
 # GALAXY Premium - LeDangKhoi
-## 🌌 VERSION: v9.3 - THE ULTIMATE EVOLUTION ⚡ OPTIMIZED FOR SAMSUNG A32
+## 🌌 VERSION: v16.9.1 - THE VISIONARY UPDATE ⚡ OPTIMIZED FOR SAMSUNG A32
 
 ---
 
@@ -19,7 +19,7 @@
     <div style="position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 3px; height: 490px; background: linear-gradient(0deg, #ff0000 0%, #330000 50%, #ff0000 100%); box-shadow: 0 0 20px 4px rgba(255, 0, 0, 0.9); animation: lightningStrike 0.3s infinite;"></div>
     
     <div style="position: absolute; top: 100px; left: 50%; transform: translateX(-50%); color: #FF0000; font-family: 'Courier New', monospace; font-size: 16px; text-shadow: 0 0 5px #FF0000; text-align: center;">
-      GALAXY v9.3<br>
+      GALAXY v16.9.1<br>
       PREMIUM VERSION<br>
       SYSTEM: ACTIVE<br>
       ⚡⚡⚡
@@ -38,7 +38,7 @@
 ---
 
 ## ⚡ QUICK LOADSTRING (GALAXY Premium v9.3)
-> Copy dòng này và dán vào Executor (Delta, Fluxus, Arceus X...):
+> Copy dòng này và dán vào Executor của bạn:
 
 ```lua
 loadstring(game:HttpGet("[https://raw.githubusercontent.com/LeDangKhoi-Galaxy/GalaxyPremium/main/v9_3.lua](https://raw.githubusercontent.com/LeDangKhoi-Galaxy/GalaxyPremium/main/v9_3.lua)"))()
