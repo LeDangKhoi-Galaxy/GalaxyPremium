@@ -1,5 +1,5 @@
 --[[ 
-   GALAXU PREMIUM v1.0
+   GALAXY PREMIUM v1.0
    - AUTHENTIC BY: LeDangKhoi
    - FULL FEATURES: Fly, Speed, Aim, ESP, Auto Block.
    - FIXED MENU: Nút đóng/mở & Menu kéo tự do.
