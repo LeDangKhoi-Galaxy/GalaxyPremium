@@ -1,7 +1,7 @@
 --[[ 
-   GALAXY PREMIUM v1.3.2 - BRAND UPDATE
-   - CẬP NHẬT: Đổi tên nút Toggle thành "GALAXY".
-   - FIXED: Logic tách biệt Menu chính và Player Tool.
+   GALAXY PREMIUM v1.5 - ULTIMATE EDITION
+   - CẬP NHẬT: ESP & Chams tự động quét người chơi mới (Auto-Refresh).
+   - TÍNH NĂNG: Intro Black Overlay, Notification, Player Tool, Aim, Fly, Auto Block.
    - AUTHENTIC BY: LeDangKhoi
 ]]
 
@@ -23,7 +23,9 @@ local NeonRed = Color3.fromRGB(255, 0, 0)
 
 -- BIẾN HỆ THỐNG
 _G.TargetName = ""
+_G.Speed = 16; _G.Fly = false; _G.AutoBlock = false; _G.Aim = false; _G.ESP = false
 local OriginalCFrames = {}
+local blockTick = 0
 
 -- Hàm tìm người chơi thông minh
 local function GetPlayer(name)
@@ -91,10 +93,9 @@ Instance.new("UIStroke", SubMenu).Color = NeonRed
 local function CreateTitle(p, txt)
     local T = Instance.new("TextLabel", p); T.Size = UDim2.new(1, 0, 0, 40); T.BackgroundColor3 = NeonRed; T.Text = txt; T.TextColor3 = Color3.new(1,1,1); T.Font = Enum.Font.SourceSansBold; T.TextSize = 16
 end
-CreateTitle(Main, "GALAXY Premium - LeDangKhoi")
+CreateTitle(Main, "GALAXY Premium - Main")
 CreateTitle(SubMenu, "PLAYER TOOL")
 
--- NÚT MỞ MENU (ĐÃ ĐỔI TÊN THÀNH GALAXY)
 local ToggleBtn = Instance.new("TextButton", G)
 ToggleBtn.Visible = false; ToggleBtn.Size = UDim2.new(0, 85, 0, 35); ToggleBtn.Position = UDim2.new(0, 10, 0.5, 0); ToggleBtn.BackgroundColor3 = Color3.new(0,0,0); ToggleBtn.Text = "GALAXY"; ToggleBtn.TextColor3 = NeonRed; ToggleBtn.Font = Enum.Font.SourceSansBold; ToggleBtn.TextSize = 12; Instance.new("UIStroke", ToggleBtn).Color = NeonRed
 
@@ -149,7 +150,7 @@ AddSubBtn("BRING PLAYER", 150, function(v)
 end)
 
 -- =========================================
--- MAIN FEATURES
+-- MAIN FEATURES & CORE LOOP
 -- =========================================
 local function AddMainBtn(n, y, c)
     local b = Instance.new("TextButton", Main); b.Size = UDim2.new(1, -20, 0, 45); b.Position = UDim2.new(0, 10, 0, y); b.BackgroundColor3 = Color3.fromRGB(30,30,30); b.Text = n..": OFF"; b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.SourceSansBold; b.TextSize = 18
@@ -166,47 +167,77 @@ local Inp = Instance.new("TextBox", Main); Inp.Size = UDim2.new(1, -20, 0, 45); 
 
 local Close = Instance.new("TextButton", Main); Close.Size = UDim2.new(1,-20,0,40); Close.Position = UDim2.new(0,10,0,380); Close.BackgroundColor3 = Color3.new(0.2,0,0); Close.Text = "HỦY SCRIPT"; Close.TextColor3 = Color3.new(1,1,1); Close.Font = Enum.Font.SourceSansBold; Close.MouseButton1Click:Connect(function() G:Destroy() end)
 
--- KHỞI CHẠY
-task.spawn(function() StartScript(); Main.Visible = true; ToggleBtn.Visible = true end)
-
--- HEARTBEAT LOOP
-_G.Speed = 16; _G.Fly = false; _G.AutoBlock = false; _G.Aim = false; _G.ESP = false
-local blockTick = 0
+-- LOGIC CORE TRONG HEARTBEAT
 RS.Heartbeat:Connect(function()
     pcall(function()
         if not LP.Character or not LP.Character:FindFirstChild("Humanoid") then return end
         LP.Character.Humanoid.WalkSpeed = _G.Speed
         if _G.Fly then LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 50, 0) end
+        
         local myHRP = LP.Character.HumanoidRootPart
         local shouldBlock = false; local targetHRP = nil; local minFOV = math.huge
+        
         for _, v in pairs(Players:GetPlayers()) do
-            if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-                local hrp = v.Character.HumanoidRootPart; local dist = (myHRP.Position - hrp.Position).Magnitude; local hum = v.Character.Humanoid
-                if _G.Aim and hum.Health > 0 then
-                    local screenPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
-                    if onScreen then
-                        local fov = (Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
-                        if fov < minFOV then minFOV = fov; targetHRP = hrp end
+            if v ~= LP and v.Character then
+                local char = v.Character
+                local hrp = char:FindFirstChild("HumanoidRootPart")
+                local hum = char:FindFirstChild("Humanoid")
+                local head = char:FindFirstChild("Head")
+                
+                if hrp and hum and head then
+                    local dist = (myHRP.Position - hrp.Position).Magnitude
+                    
+                    -- HỆ THỐNG ESP & CHAMS TỰ ĐỘNG CẬP NHẬT
+                    if _G.ESP then
+                        -- 1. Billboard Tag (Tên/Máu)
+                        if not head:FindFirstChild("G_Tag") then
+                            local b = Instance.new("BillboardGui", head); b.Name = "G_Tag"; b.Size = UDim2.new(0, 200, 0, 100); b.AlwaysOnTop = true; b.StudsOffset = Vector3.new(0, 4, 0)
+                            local l = Instance.new("TextLabel", b); l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = NeonRed; l.Font = Enum.Font.SourceSansBold; l.TextSize = 22
+                        end
+                        head.G_Tag.TextLabel.Text = v.Name.."\nHP: "..math.floor(hum.Health).."\n"..math.floor(dist).."m"
+                        
+                        -- 2. Chams (Highlight)
+                        if not char:FindFirstChild("G_Chams") then
+                            local h = Instance.new("Highlight", char); h.Name = "G_Chams"
+                            h.FillColor = NeonRed; h.FillTransparency = 0.5; h.OutlineColor = Color3.new(1, 1, 1); h.OutlineTransparency = 0
+                            h.Adornee = char
+                        end
+                    else
+                        -- Dọn dẹp khi tắt
+                        if head:FindFirstChild("G_Tag") then head.G_Tag:Destroy() end
+                        if char:FindFirstChild("G_Chams") then char.G_Chams:Destroy() end
                     end
-                end
-                if _G.ESP then
-                    if not v.Character.Head:FindFirstChild("G_Tag") then
-                        local b = Instance.new("BillboardGui", v.Character.Head); b.Name = "G_Tag"; b.Size = UDim2.new(0, 200, 0, 100); b.AlwaysOnTop = true; b.StudsOffset = Vector3.new(0, 4, 0)
-                        local l = Instance.new("TextLabel", b); l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = NeonRed; l.Font = Enum.Font.SourceSansBold; l.TextSize = 22
+
+                    -- AIMBOT LOGIC
+                    if _G.Aim and hum.Health > 0 then
+                        local screenPos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+                        if onScreen then
+                            local fov = (Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
+                            if fov < minFOV then minFOV = fov; targetHRP = hrp end
+                        end
                     end
-                    v.Character.Head.G_Tag.TextLabel.Text = v.Name.."\nHP: "..math.floor(hum.Health).."\n"..math.floor(dist).."m"
-                end
-                if _G.AutoBlock and dist < 25 and dist > 6.5 then
-                    local anim = hum:FindFirstChildOfClass("Animator")
-                    if anim then for _, t in pairs(anim:GetPlayingAnimationTracks()) do if t.IsPlaying and t.Speed > 1.1 and t.WeightCurrent > 0.55 then shouldBlock = true; break end end end
-                    if hrp.Velocity.Magnitude > 55 then shouldBlock = true end
+
+                    -- AUTO BLOCK LOGIC
+                    if _G.AutoBlock and dist < 25 and dist > 6.5 then
+                        local anim = hum:FindFirstChildOfClass("Animator")
+                        if anim then for _, t in pairs(anim:GetPlayingAnimationTracks()) do if t.IsPlaying and t.Speed > 1.1 and t.WeightCurrent > 0.55 then shouldBlock = true; break end end end
+                        if hrp.Velocity.Magnitude > 55 then shouldBlock = true end
+                    end
                 end
             end
         end
+        
         if _G.Aim and targetHRP then LP.Character.HumanoidRootPart.CFrame = CFrame.lookAt(myHRP.Position, Vector3.new(targetHRP.Position.X, myHRP.Position.Y, targetHRP.Position.Z)) end
         if _G.AutoBlock then
             if shouldBlock then VIM:SendKeyEvent(true, Enum.KeyCode.F, false, game); blockTick = tick()
             elseif tick() - blockTick > 0.4 then VIM:SendKeyEvent(false, Enum.KeyCode.F, false, game) end
         end
     end)
+end)
+
+-- KHỞI CHẠY
+task.spawn(function() 
+    StartScript()
+    Main.Visible = true
+    ToggleBtn.Visible = true 
 end)
