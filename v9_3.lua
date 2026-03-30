@@ -70,7 +70,7 @@ local function StartScript()
     local Notif = Instance.new("Frame", G)
     Notif.Size = UDim2.new(0, 180, 0, 35); Notif.Position = UDim2.new(0, -200, 0, 20); Notif.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     Instance.new("UIStroke", Notif).Color = NeonRed
-    local NText = Instance.new("TextLabel", Notif); NText.Size = UDim2.new(1, 0, 1, 0); NText.BackgroundTransparency = 1; NText.Text = "Script Load Hoàn Thành"; NText.TextColor3 = Color3.new(1, 1, 1); NText.Font = Enum.Font.SourceSansBold; NText.TextSize = 14
+    local NText = Instance.new("TextLabel", Notif); NText.Size = UDim2.new(1, 0, 1, 0); NText.BackgroundTransparency = 1; NText.Text = "Script Đang Tải"; NText.TextColor3 = Color3.new(1, 1, 1); NText.Font = Enum.Font.SourceSansBold; NText.TextSize = 14
     Notif:TweenPosition(UDim2.new(0, 20, 0, 20), "Out", "Back", 0.5, true)
     task.wait(3)
     Notif:TweenPosition(UDim2.new(0, -200, 0, 20), "In", "Linear", 0.5, true)
