@@ -1,8 +1,8 @@
 --[[ 
-   GALAXY PREMIUM v3.3 - PLAYER TOOL FIXED
-   - FIX: Hiển thị đầy đủ khung nhập tên, Loop TP và Bring trong Player Tool.
-   - KẾ THỪA: Giữ nguyên Intro v2.2 và ESP v1.8.
-   - UPGRADE: TP TO VOID nhớ vị trí và nút HỦY SCRIPT sạch sẽ.
+   GALAXY PREMIUM v3.5 - PERSISTENT VOID PLATE
+   - KẾ THỪA: Toàn bộ Intro v2.2, ESP v1.8 và Player Tool Fixed.
+   - NÂNG CẤP: TP TO VOID tạo tấm kính tồn tại vĩnh viễn cho đến khi nhấn HỦY SCRIPT.
+   - RECALL: Tắt TP TO VOID vẫn quay về vị trí cũ, nhưng tấm kính không mất.
    - AUTHENTIC BY: LeDangKhoi
 ]]
 
@@ -49,16 +49,7 @@ _G.LoopTP = false; _G.Bring = false
 local OriginalCFrames = {}
 local blockTick = 0
 local LastPosBeforeVoid = nil 
-
--- TẤM KÍNH ANTI-VOID
-local GlobalVoidPlate = Instance.new("Part", workspace)
-GlobalVoidPlate.Name = "Galaxy_AntiVoid_Plate"
-GlobalVoidPlate.Size = Vector3.new(2000, 1, 2000)
-GlobalVoidPlate.Position = Vector3.new(0, -500, 0)
-GlobalVoidPlate.Anchored = true
-GlobalVoidPlate.Transparency = 0.8
-GlobalVoidPlate.Color = NeonRed
-GlobalVoidPlate.Material = Enum.Material.ForceField
+local CurrentVoidPlate = nil 
 
 -- HÀM NHẬN DIỆN THÔNG MINH
 local function GetPlayerSmart(name)
@@ -116,7 +107,7 @@ CreateTitle(SubMenu, "PLAYER TOOL")
 local ToggleBtn = Instance.new("TextButton", G); ToggleBtn.Visible = false; ToggleBtn.Size = UDim2.new(0, 85, 0, 35); ToggleBtn.Position = UDim2.new(0, 10, 0.5, 0); ToggleBtn.BackgroundColor3 = Color3.new(0,0,0); ToggleBtn.Text = "GALAXY"; ToggleBtn.TextColor3 = NeonRed; ToggleBtn.Font = Enum.Font.SourceSansBold; ToggleBtn.TextSize = 12; Instance.new("UIStroke", ToggleBtn).Color = NeonRed
 ToggleBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
 
--- PLAYER TOOL CONTENT (FIXED)
+-- PLAYER TOOL CONTENT
 local NameBox = Instance.new("TextBox", SubMenu); NameBox.Size = UDim2.new(1, -20, 0, 40); NameBox.Position = UDim2.new(0, 10, 0, 50); NameBox.BackgroundColor3 = Color3.fromRGB(30,30,30); NameBox.Text = ""; NameBox.PlaceholderText = "Tên người chơi..."; NameBox.TextColor3 = Color3.new(1,1,1); NameBox.Font = Enum.Font.SourceSansBold; NameBox.TextSize = 12; Instance.new("UIStroke", NameBox).Color = NeonRed
 NameBox.FocusLost:Connect(function() _G.TargetName = NameBox.Text end)
 
@@ -130,9 +121,7 @@ AddSubBtn("LOOP TELEPORT", 100, function(v)
     task.spawn(function()
         while _G.LoopTP and _G.Active do task.wait()
             local t = GetPlayerSmart(_G.TargetName)
-            if t and t.Character and LP.Character then 
-                LP.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3) 
-            end
+            if t and t.Character and LP.Character then LP.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3) end
         end
     end)
 end)
@@ -141,16 +130,8 @@ AddSubBtn("BRING PLAYER", 150, function(v)
     _G.Bring = v; local t = GetPlayerSmart(_G.TargetName)
     if v and t then 
         OriginalCFrames[t.UserId] = t.Character.HumanoidRootPart.CFrame
-        task.spawn(function() 
-            while _G.Bring and _G.Active do task.wait() 
-                if LP.Character and t.Character then 
-                    t.Character.HumanoidRootPart.CFrame = LP.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3) 
-                end 
-            end 
-        end)
-    elseif not v and t and OriginalCFrames[t.UserId] then 
-        t.Character.HumanoidRootPart.CFrame = OriginalCFrames[t.UserId] 
-    end
+        task.spawn(function() while _G.Bring and _G.Active do task.wait() if LP.Character and t.Character then t.Character.HumanoidRootPart.CFrame = LP.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3) end end end)
+    elseif not v and t and OriginalCFrames[t.UserId] then t.Character.HumanoidRootPart.CFrame = OriginalCFrames[t.UserId] end
 end)
 
 -- MAIN CONTENT
@@ -164,9 +145,26 @@ AddMainBtn("AUTO BLOCK", 105, function(v) _G.AutoBlock = v end)
 AddMainBtn("FLY MODE", 160, function(v) _G.Fly = v end)
 AddMainBtn("PLAYER ESP", 215, function(v) _G.ESP = v end)
 AddMainBtn("PLAYER TOOL", 270, function(v) SubMenu.Visible = v end)
+
+-- TP TO VOID VỚI TẤM KÍNH VĨNH VIỄN
 AddMainBtn("TP TO VOID", 325, function(v)
-    if v and LP.Character then LastPosBeforeVoid = LP.Character.HumanoidRootPart.CFrame; LP.Character.HumanoidRootPart.CFrame = CFrame.new(0, -495, 0)
-    elseif not v and LP.Character then LP.Character.HumanoidRootPart.CFrame = LastPosBeforeVoid or CFrame.new(0, 50, 0) end
+    if v and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+        LastPosBeforeVoid = LP.Character.HumanoidRootPart.CFrame
+        
+        -- Tạo tấm kính nếu nó chưa tồn tại
+        if not CurrentVoidPlate then
+            CurrentVoidPlate = Instance.new("Part", workspace)
+            CurrentVoidPlate.Name = "Galaxy_PersistentVoid"
+            CurrentVoidPlate.Size = Vector3.new(100, 1, 100)
+            CurrentVoidPlate.Position = LastPosBeforeVoid.Position - Vector3.new(0, 200, 0) -- Đặt sâu xuống 200 studs cho an toàn
+            CurrentVoidPlate.Anchored = true; CurrentVoidPlate.Transparency = 0.5; CurrentVoidPlate.Color = NeonRed; CurrentVoidPlate.Material = Enum.Material.ForceField
+        end
+        
+        LP.Character.HumanoidRootPart.CFrame = CFrame.new(CurrentVoidPlate.Position + Vector3.new(0, 4, 0))
+    elseif not v and LP.Character then
+        -- Tắt TP nhưng KHÔNG Destroy tấm kính
+        LP.Character.HumanoidRootPart.CFrame = LastPosBeforeVoid or CFrame.new(0, 50, 0)
+    end
 end)
 
 local Inp = Instance.new("TextBox", Main); Inp.Size = UDim2.new(1, -20, 0, 45); Inp.Position = UDim2.new(0, 10, 0, 380); Inp.BackgroundColor3 = Color3.fromRGB(30,30,30); Inp.Text = "TỐC ĐỘ (16)"; Inp.TextColor3 = NeonRed; Inp.Font = Enum.Font.SourceSansBold; Inp.TextSize = 18; Inp.FocusLost:Connect(function() _G.Speed = tonumber(Inp.Text) or 16 end)
@@ -181,7 +179,8 @@ Close.MouseButton1Click:Connect(function()
             if v.Character:FindFirstChild("G_Chams") then v.Character.G_Chams:Destroy() end
         end
     end
-    if GlobalVoidPlate then GlobalVoidPlate:Destroy() end
+    -- CHỈ KHI NHẤN NÚT NÀY MỚI XÓA TẤM KÍNH
+    if CurrentVoidPlate then CurrentVoidPlate:Destroy() end
     G:Destroy() 
 end)
 
