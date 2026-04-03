@@ -110,7 +110,7 @@ local SubMenu = Instance.new("Frame", G); SubMenu.Visible = false; SubMenu.Size 
 local function CreateTitle(p, txt)
     local T = Instance.new("TextLabel", p); T.Size = UDim2.new(1, 0, 0, 40); T.BackgroundColor3 = NeonRed; T.Text = txt; T.TextColor3 = Color3.new(1,1,1); T.Font = Enum.Font.SourceSansBold; T.TextSize = 16
 end
-CreateTitle(Main, "GALAXY Premium - Main")
+CreateTitle(Main, "GALAXY Premium - LeDangKhoi")
 CreateTitle(SubMenu, "PLAYER TOOL")
 
 local ToggleBtn = Instance.new("TextButton", G); ToggleBtn.Visible = false; ToggleBtn.Size = UDim2.new(0, 85, 0, 35); ToggleBtn.Position = UDim2.new(0, 10, 0.5, 0); ToggleBtn.BackgroundColor3 = Color3.new(0,0,0); ToggleBtn.Text = "GALAXY"; ToggleBtn.TextColor3 = NeonRed; ToggleBtn.Font = Enum.Font.SourceSansBold; ToggleBtn.TextSize = 12; Instance.new("UIStroke", ToggleBtn).Color = NeonRed
@@ -162,7 +162,7 @@ end
 AddMainBtn("SMART AIM", 50, function(v) _G.Aim = v end)
 AddMainBtn("AUTO BLOCK", 105, function(v) _G.AutoBlock = v end)
 AddMainBtn("FLY MODE", 160, function(v) _G.Fly = v end)
-AddMainBtn("ESP", 215, function(v) _G.ESP = v end)
+AddMainBtn("PLAYER ESP", 215, function(v) _G.ESP = v end)
 AddMainBtn("PLAYER TOOL", 270, function(v) SubMenu.Visible = v end)
 AddMainBtn("TP TO VOID", 325, function(v)
     if v and LP.Character then LastPosBeforeVoid = LP.Character.HumanoidRootPart.CFrame; LP.Character.HumanoidRootPart.CFrame = CFrame.new(0, -495, 0)
