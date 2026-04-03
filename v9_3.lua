@@ -1,8 +1,8 @@
 --[[ 
-   GALAXY PREMIUM v3.5 - PERSISTENT VOID PLATE
-   - KẾ THỪA: Toàn bộ Intro v2.2, ESP v1.8 và Player Tool Fixed.
-   - NÂNG CẤP: TP TO VOID tạo tấm kính tồn tại vĩnh viễn cho đến khi nhấn HỦY SCRIPT.
-   - RECALL: Tắt TP TO VOID vẫn quay về vị trí cũ, nhưng tấm kính không mất.
+   GALAXY PREMIUM v3.9 - FINAL TOUCH
+   - RESTORED: Bảng thông báo "Script Load Hoàn Thành" sau Intro.
+   - FIXED: Tọa độ Absolute Void (Y = -500).
+   - PERSISTENT: Tấm kính tồn tại vĩnh viễn cho đến khi HỦY SCRIPT.
    - AUTHENTIC BY: LeDangKhoi
 ]]
 
@@ -13,27 +13,7 @@ local VIM = game:GetService("VirtualInputManager")
 local TS = game:GetService("TweenService")
 local Camera = workspace.CurrentCamera
 
--- =========================================
--- [SIÊU TƯỜNG LỬA - BẢO VỆ TUYỆT ĐỐI]
--- =========================================
-local RawMetatable = getrawmetatable(game)
-local OldNamecall = RawMetatable.__namecall
-local OldIndex = RawMetatable.__index
-if setreadonly then setreadonly(RawMetatable, false) end
-
-RawMetatable.__namecall = newcclosure(function(self, ...)
-    local Method = getnamecallmethod()
-    if Method == "Kick" or Method == "kick" or Method == "ReportAbuse" then return nil end
-    return OldNamecall(self, ...)
-end)
-
-RawMetatable.__index = newcclosure(function(self, Key)
-    if self:IsA("Humanoid") and Key == "WalkSpeed" then return 16 end 
-    return OldIndex(self, Key)
-end)
-if setreadonly then setreadonly(RawMetatable, true) end
-
--- DỌN DẸP UI
+-- DỌN DẸP UI CŨ
 for _, v in pairs(LP.PlayerGui:GetChildren()) do
     if v.Name:find("Galaxy") then v:Destroy() end
 end
@@ -51,49 +31,50 @@ local blockTick = 0
 local LastPosBeforeVoid = nil 
 local CurrentVoidPlate = nil 
 
--- HÀM NHẬN DIỆN THÔNG MINH
-local function GetPlayerSmart(name)
-    if name == "" then return nil end
-    name = name:lower()
-    for _, v in pairs(Players:GetPlayers()) do
-        if v.Name:lower():sub(1, #name) == name or v.DisplayName:lower():sub(1, #name) == name then
-            return v
-        end
-    end
-    return nil
-end
-
 -- =========================================
--- INTRO & NOTIFICATION (GIỮ NGUYÊN v2.2)
+-- [INTRO & NOTIFICATION - RESTORED]
 -- =========================================
 local function StartIntro()
+    -- 1. Intro Center
     local Overlay = Instance.new("Frame", G)
     Overlay.Size = UDim2.new(1, 0, 1, 0); Overlay.BackgroundColor3 = Color3.new(0, 0, 0); Overlay.BackgroundTransparency = 1; Overlay.ZIndex = 100
-    local IntroBox = Instance.new("Frame", Overlay); IntroBox.Size = UDim2.new(0, 400, 0, 100); IntroBox.Position = UDim2.new(0.5, -200, 0.5, -50); IntroBox.BackgroundColor3 = Color3.fromRGB(10, 10, 10); IntroBox.BackgroundTransparency = 1
+    local IntroBox = Instance.new("Frame", Overlay)
+    IntroBox.Size = UDim2.new(0, 400, 0, 100); IntroBox.Position = UDim2.new(0.5, -200, 0.5, -50); IntroBox.BackgroundColor3 = Color3.fromRGB(10, 10, 10); IntroBox.BackgroundTransparency = 1
     local BoxStroke = Instance.new("UIStroke", IntroBox); BoxStroke.Color = NeonRed; BoxStroke.Thickness = 2; BoxStroke.Transparency = 1
-    local IntroText = Instance.new("TextLabel", IntroBox); IntroText.Size = UDim2.new(1, 0, 1, 0); IntroText.BackgroundTransparency = 1; IntroText.Text = "GALAXY Premium By LeDangKhoi"; IntroText.TextColor3 = NeonRed; IntroText.Font = Enum.Font.SourceSansBold; IntroText.TextSize = 25; IntroText.TextTransparency = 1
+    local IntroText = Instance.new("TextLabel", IntroBox)
+    IntroText.Size = UDim2.new(1, 0, 1, 0); IntroText.BackgroundTransparency = 1; IntroText.Text = "GALAXY Premium By LeDangKhoi"; IntroText.TextColor3 = NeonRed; IntroText.Font = Enum.Font.SourceSansBold; IntroText.TextSize = 25; IntroText.TextTransparency = 1
 
     TS:Create(Overlay, TweenInfo.new(0.5), {BackgroundTransparency = 0.4}):Play()
-    task.wait(0.5); TS:Create(IntroBox, TweenInfo.new(0.8), {BackgroundTransparency = 0.2}):Play()
+    task.wait(0.5)
+    TS:Create(IntroBox, TweenInfo.new(0.8), {BackgroundTransparency = 0.2}):Play()
     TS:Create(BoxStroke, TweenInfo.new(0.8), {Transparency = 0}):Play()
     TS:Create(IntroText, TweenInfo.new(0.8), {TextTransparency = 0}):Play()
-    task.wait(2.2); TS:Create(Overlay, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+    
+    task.wait(2.2)
+    
+    TS:Create(Overlay, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
     TS:Create(IntroBox, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
     TS:Create(BoxStroke, TweenInfo.new(0.5), {Transparency = 1}):Play()
     TS:Create(IntroText, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
     task.wait(0.6); Overlay:Destroy()
 
+    -- 2. Notification (Góc trên bên trái)
     local Notif = Instance.new("Frame", G)
-    Notif.Size = UDim2.new(0, 180, 0, 35); Notif.Position = UDim2.new(0, -200, 0, 20); Notif.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    Instance.new("UIStroke", Notif).Color = NeonRed
-    local NText = Instance.new("TextLabel", Notif); NText.Size = UDim2.new(1, 0, 1, 0); NText.BackgroundTransparency = 1; NText.Text = "Script Loading"; NText.TextColor3 = Color3.new(1, 1, 1); NText.Font = Enum.Font.SourceSansBold; NText.TextSize = 14
+    Notif.Size = UDim2.new(0, 200, 0, 35); Notif.Position = UDim2.new(0, -220, 0, 20); Notif.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    local NStroke = Instance.new("UIStroke", Notif); NStroke.Color = NeonRed; NStroke.Thickness = 1
+    local NText = Instance.new("TextLabel", Notif)
+    NText.Size = UDim2.new(1, 0, 1, 0); NText.BackgroundTransparency = 1; NText.Text = "Script Loading"; NText.TextColor3 = Color3.new(1, 1, 1); NText.Font = Enum.Font.SourceSansBold; NText.TextSize = 14
+    
+    -- Hiệu ứng trượt ra
     Notif:TweenPosition(UDim2.new(0, 20, 0, 20), "Out", "Back", 0.5, true)
-    task.wait(3); Notif:TweenPosition(UDim2.new(0, -200, 0, 20), "In", "Linear", 0.5, true)
+    task.wait(3)
+    -- Hiệu ứng trượt vào lại
+    Notif:TweenPosition(UDim2.new(0, -220, 0, 20), "In", "Linear", 0.5, true)
     task.delay(0.5, function() Notif:Destroy() end)
 end
 
 -- =========================================
--- MENU UI
+-- [MENU & CHỨC NĂNG]
 -- =========================================
 local Main = Instance.new("Frame", G); Main.Visible = false; Main.Size = UDim2.new(0, 220, 0, 520); Main.Position = UDim2.new(0.5, -230, 0.3, 0); Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Main.Active = true; Main.Draggable = true; Instance.new("UIStroke", Main).Color = NeonRed
 local SubMenu = Instance.new("Frame", G); SubMenu.Visible = false; SubMenu.Size = UDim2.new(0, 200, 0, 250); SubMenu.Position = UDim2.new(0.5, 10, 0.3, 0); SubMenu.BackgroundColor3 = Color3.fromRGB(15, 15, 15); SubMenu.Active = true; SubMenu.Draggable = true; Instance.new("UIStroke", SubMenu).Color = NeonRed
@@ -107,9 +88,17 @@ CreateTitle(SubMenu, "PLAYER TOOL")
 local ToggleBtn = Instance.new("TextButton", G); ToggleBtn.Visible = false; ToggleBtn.Size = UDim2.new(0, 85, 0, 35); ToggleBtn.Position = UDim2.new(0, 10, 0.5, 0); ToggleBtn.BackgroundColor3 = Color3.new(0,0,0); ToggleBtn.Text = "GALAXY"; ToggleBtn.TextColor3 = NeonRed; ToggleBtn.Font = Enum.Font.SourceSansBold; ToggleBtn.TextSize = 12; Instance.new("UIStroke", ToggleBtn).Color = NeonRed
 ToggleBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
 
--- PLAYER TOOL CONTENT
 local NameBox = Instance.new("TextBox", SubMenu); NameBox.Size = UDim2.new(1, -20, 0, 40); NameBox.Position = UDim2.new(0, 10, 0, 50); NameBox.BackgroundColor3 = Color3.fromRGB(30,30,30); NameBox.Text = ""; NameBox.PlaceholderText = "Tên người chơi..."; NameBox.TextColor3 = Color3.new(1,1,1); NameBox.Font = Enum.Font.SourceSansBold; NameBox.TextSize = 12; Instance.new("UIStroke", NameBox).Color = NeonRed
 NameBox.FocusLost:Connect(function() _G.TargetName = NameBox.Text end)
+
+local function GetPlayerSmart(name)
+    if name == "" then return nil end
+    name = name:lower()
+    for _, v in pairs(Players:GetPlayers()) do
+        if v.Name:lower():sub(1, #name) == name or v.DisplayName:lower():sub(1, #name) == name then return v end
+    end
+    return nil
+end
 
 local function AddSubBtn(n, y, c)
     local b = Instance.new("TextButton", SubMenu); b.Size = UDim2.new(1, -20, 0, 40); b.Position = UDim2.new(0, 10, 0, y); b.BackgroundColor3 = Color3.fromRGB(30,30,30); b.Text = n..": OFF"; b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.SourceSansBold; b.TextSize = 14
@@ -134,7 +123,6 @@ AddSubBtn("BRING PLAYER", 150, function(v)
     elseif not v and t and OriginalCFrames[t.UserId] then t.Character.HumanoidRootPart.CFrame = OriginalCFrames[t.UserId] end
 end)
 
--- MAIN CONTENT
 local function AddMainBtn(n, y, c)
     local b = Instance.new("TextButton", Main); b.Size = UDim2.new(1, -20, 0, 45); b.Position = UDim2.new(0, 10, 0, y); b.BackgroundColor3 = Color3.fromRGB(30,30,30); b.Text = n..": OFF"; b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.SourceSansBold; b.TextSize = 18
     local s = false; b.MouseButton1Click:Connect(function() s = not s; b.Text = n..(s and ": ON" or ": OFF"); b.TextColor3 = s and NeonRed or Color3.new(1,1,1); c(s) end)
@@ -146,23 +134,17 @@ AddMainBtn("FLY MODE", 160, function(v) _G.Fly = v end)
 AddMainBtn("PLAYER ESP", 215, function(v) _G.ESP = v end)
 AddMainBtn("PLAYER TOOL", 270, function(v) SubMenu.Visible = v end)
 
--- TP TO VOID VỚI TẤM KÍNH VĨNH VIỄN
 AddMainBtn("TP TO VOID", 325, function(v)
-    if v and LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+    if v and LP.Character then
         LastPosBeforeVoid = LP.Character.HumanoidRootPart.CFrame
-        
-        -- Tạo tấm kính nếu nó chưa tồn tại
         if not CurrentVoidPlate then
-            CurrentVoidPlate = Instance.new("Part", workspace)
-            CurrentVoidPlate.Name = "Galaxy_PersistentVoid"
-            CurrentVoidPlate.Size = Vector3.new(100, 1, 100)
-            CurrentVoidPlate.Position = LastPosBeforeVoid.Position - Vector3.new(0, 200, 0) -- Đặt sâu xuống 200 studs cho an toàn
+            CurrentVoidPlate = Instance.new("Part", workspace); CurrentVoidPlate.Name = "Galaxy_AbsoluteVoid"; CurrentVoidPlate.Size = Vector3.new(500, 1, 500)
+            -- CỐ ĐỊNH Y = -500
+            CurrentVoidPlate.Position = Vector3.new(LastPosBeforeVoid.Position.X, -500, LastPosBeforeVoid.Position.Z)
             CurrentVoidPlate.Anchored = true; CurrentVoidPlate.Transparency = 0.5; CurrentVoidPlate.Color = NeonRed; CurrentVoidPlate.Material = Enum.Material.ForceField
         end
-        
-        LP.Character.HumanoidRootPart.CFrame = CFrame.new(CurrentVoidPlate.Position + Vector3.new(0, 4, 0))
+        LP.Character.HumanoidRootPart.CFrame = CFrame.new(CurrentVoidPlate.Position + Vector3.new(0, 5, 0))
     elseif not v and LP.Character then
-        -- Tắt TP nhưng KHÔNG Destroy tấm kính
         LP.Character.HumanoidRootPart.CFrame = LastPosBeforeVoid or CFrame.new(0, 50, 0)
     end
 end)
@@ -179,21 +161,17 @@ Close.MouseButton1Click:Connect(function()
             if v.Character:FindFirstChild("G_Chams") then v.Character.G_Chams:Destroy() end
         end
     end
-    -- CHỈ KHI NHẤN NÚT NÀY MỚI XÓA TẤM KÍNH
     if CurrentVoidPlate then CurrentVoidPlate:Destroy() end
     G:Destroy() 
 end)
 
--- =========================================
--- CORE HEARTBEAT
--- =========================================
+-- HEARTBEAT CORE (AIM, ESP, BLOCK...)
 RS.Heartbeat:Connect(function()
     if not _G.Active then return end
     pcall(function()
         if not LP.Character or not LP.Character:FindFirstChild("Humanoid") then return end
         LP.Character.Humanoid.WalkSpeed = _G.Speed
         if _G.Fly then LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 50, 0) end
-        
         local myHRP = LP.Character.HumanoidRootPart; local targetHRP = nil; local minFOV = math.huge
         for _, v in pairs(Players:GetPlayers()) do
             if v ~= LP and v.Character then
