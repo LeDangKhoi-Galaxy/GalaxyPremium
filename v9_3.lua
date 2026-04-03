@@ -138,7 +138,7 @@ end
 AddMainBtn("SMART AIM", 50, function(v) _G.Aim = v end)
 AddMainBtn("AUTO BLOCK", 100, function(v) _G.AutoBlock = v end)
 AddMainBtn("FLY MODE", 150, function(v) _G.Fly = v end)
-AddMainBtn("PLAYER ESP (v1.8)", 200, function(v) _G.ESP = v end)
+AddMainBtn("PLAYER ESP", 200, function(v) _G.ESP = v end)
 AddMainBtn("PLAYER TOOL", 250, function(v) SubMenu.Visible = v end)
 
 -- CẬP NHẬT CHỨC NĂNG TP TO VOID CÓ LƯU VỊ TRÍ
