@@ -1,8 +1,8 @@
 --[[ 
-   BLUE LOCK: RIVALS - ULTIMATE CONTROL V14
-   - FEATURE: Smart Ball Stalker + Kaiser Steal + Speed.
-   - UI: Slider auto-hides, "EXIT SCRIPT" button added.
-   - FIX: Perfect Camera return and script cleanup.
+   BLUE LOCK: RIVALS - ABSOLUTE CAMERA FIX V15
+   - FIX: Forced CameraType reset to ensure return to player.
+   - FEATURE: Smart Ball Stalker + Kaiser Steal.
+   - UI: Slider auto-hides, "TẮT SCRIPT" button.
    - AUTHENTIC BY: LeDangKhoi
 ]]
 
@@ -23,12 +23,15 @@ _G.BallControl = false
 _G.BallSteal = false
 _G.BallFlySpeed = 50
 
--- HÀM RESET CAMERA
-local function ResetCamera()
-    if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        Camera.CameraType = Enum.CameraType.Custom
-        Camera.CameraSubject = LP.Character.Humanoid
-    end
+-- HÀM RESET CAMERA TRIỆT ĐỂ
+local function ForceResetCamera()
+    pcall(function()
+        _G.BallControl = false
+        Camera.CameraType = Enum.CameraType.Custom -- Ép về chế độ mặc định của Roblox
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+            Camera.CameraSubject = LP.Character.Humanoid -- Đưa tâm về người chơi
+        end
+    end)
 end
 
 -- HÀM TÌM BÓNG
@@ -59,7 +62,9 @@ local function CreateBtn(name, y, callback)
         callback(state)
         if name == "CONTROL BALL (CAM)" then
             SliderLabel.Visible = state; SliderBG.Visible = state
-            if not state then ResetCamera() end
+            if not state then 
+                ForceResetCamera() -- Gọi hàm reset mạnh khi tắt
+            end
         end
     end)
 end
@@ -67,12 +72,12 @@ end
 CreateBtn("STEAL BALL", 65, function(v) _G.BallSteal = v end)
 CreateBtn("CONTROL BALL", 120, function(v) _G.BallControl = v end)
 
--- SPEED SETTING
+-- WALK SPEED
 local SpeedLabel = Instance.new("TextLabel", Main); SpeedLabel.Size = UDim2.new(1, 0, 0, 20); SpeedLabel.Position = UDim2.new(0, 0, 0, 180); SpeedLabel.BackgroundTransparency = 1; SpeedLabel.Text = "WALK SPEED"; SpeedLabel.TextColor3 = Color3.new(0.8, 0.8, 0.8); SpeedLabel.Font = FontStyle; SpeedLabel.TextSize = 14
 local SpeedInp = Instance.new("TextBox", Main); SpeedInp.Size = UDim2.new(0, 100, 0, 40); SpeedInp.Position = UDim2.new(0.5, -50, 0, 205); SpeedInp.BackgroundColor3 = Color3.fromRGB(40, 40, 40); SpeedInp.Text = "16"; SpeedInp.TextColor3 = NeonBlue; SpeedInp.Font = FontStyle; SpeedInp.TextSize = 18; Instance.new("UICorner", SpeedInp); Instance.new("UIStroke", SpeedInp).Color = NeonBlue
 SpeedInp.FocusLost:Connect(function() _G.Speed = tonumber(SpeedInp.Text) or 16 end)
 
--- SLIDER
+-- SLIDER TỐC ĐỘ BÓNG
 local function CreateBallSlider(y, min, max, default)
     SliderLabel = Instance.new("TextLabel", Main); SliderLabel.Size = UDim2.new(1, 0, 0, 25); SliderLabel.Position = UDim2.new(0, 0, 0, y); SliderLabel.BackgroundTransparency = 1; SliderLabel.Text = "FLY SPEED: " .. default; SliderLabel.TextColor3 = Color3.new(1, 1, 1); SliderLabel.Font = FontStyle; SliderLabel.TextSize = 14; SliderLabel.Visible = false
     SliderBG = Instance.new("Frame", Main); SliderBG.Size = UDim2.new(1, -60, 0, 8); SliderBG.Position = UDim2.new(0, 30, 0, y + 35); SliderBG.BackgroundColor3 = Color3.fromRGB(50, 50, 50); SliderBG.Visible = false; Instance.new("UICorner", SliderBG)
@@ -93,29 +98,24 @@ end
 
 CreateBallSlider(270, 0, 300, 50)
 
--- NÚT TẮT SCRIPT HOÀN TOÀN
+-- NÚT TẮT SCRIPT
 local ExitBtn = Instance.new("TextButton", Main)
 ExitBtn.Size = UDim2.new(1, -30, 0, 45); ExitBtn.Position = UDim2.new(0, 15, 0, 410); ExitBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0); ExitBtn.Text = "TẮT SCRIPT"; ExitBtn.TextColor3 = Color3.new(1, 1, 1); ExitBtn.Font = FontStyle; ExitBtn.TextSize = 16; Instance.new("UICorner", ExitBtn)
 
 ExitBtn.MouseButton1Click:Connect(function()
     _G.Active = false
-    _G.BallControl = false
-    _G.BallSteal = false
-    ResetCamera()
+    ForceResetCamera() -- Reset camera trước khi hủy UI
     G:Destroy()
 end)
 
--- LOGIC CORE
-local Connection
-Connection = RS.RenderStepped:Connect(function()
-    if not _G.Active then 
-        if Connection then Connection:Disconnect() end
-        return 
-    end
+-- LOGIC XỬ LÝ
+RS.RenderStepped:Connect(function()
+    if not _G.Active then return end
     
     local ball = GetRealBall()
     if ball then
         if _G.BallControl then
+            Camera.CameraType = Enum.CameraType.Follow -- Đổi sang chế độ bám bóng mượt hơn
             Camera.CameraSubject = ball
             local targetPos = Camera.CFrame.Position + (Camera.CFrame.LookVector * 20)
             ball.Velocity = (targetPos - ball.Position) * (_G.BallFlySpeed / 4)
@@ -126,7 +126,7 @@ Connection = RS.RenderStepped:Connect(function()
             if (hrp.Position - ball.Position).Magnitude < 3 then
                 for _, p in pairs(Players:GetPlayers()) do
                     if p ~= LP and p.Team ~= LP.Team and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                        if (p.Character.HumanoidRootPart.Position - ball.Position).Magnitude < 6 then
+                        if (p.Character.HumanoidRootPart.Position - ball.Position).Magnitude < 5 then
                             firetouchinterest(hrp, ball, 0)
                             task.wait()
                             firetouchinterest(hrp, ball, 1)
