@@ -1,9 +1,8 @@
 --[[ 
-   BLUE LOCK: RIVALS - GUARDIAN EDITION V16
-   - MENU: BLUE LOCK : RIVALS
-   - FEATURE 1: KAISER STEAL (Smart 3 Studs Glitch)
-   - FEATURE 2: AUTO GK (Teleport + Tackle/Catch when ball near goal)
-   - FEATURE 3: LOOP SPEED (No Rubberband/Smooth move)
+   BLUE LOCK: RIVALS - PRO RIVALS V17 (FIXED ALL)
+   - SPEED: Fixed Loop Speed (No Rubberband).
+   - STEAL: Enhanced Kaiser Steal (Increased Range).
+   - GK: Optimized Auto GK (Precision Teleport).
    - AUTHENTIC BY: LeDangKhoi
 ]]
 
@@ -22,11 +21,11 @@ _G.Speed = 16
 _G.BallSteal = false
 _G.AutoGK = false
 
--- HÀM TÌM BÓNG
+-- TÌM BÓNG (QUAN TRỌNG)
 local function GetBall()
-    for _, obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("BasePart") and (obj.Name == "Ball" or obj.Name == "Football") then
-            if obj.Transparency < 1 then return obj end
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v:IsA("BasePart") and (v.Name == "Ball" or v.Name == "Football") and v.Transparency < 1 then
+            return v
         end
     end
     return nil
@@ -52,54 +51,55 @@ end
 CreateBtn("STEAL BALL", 65, function(v) _G.BallSteal = v end)
 CreateBtn("AUTO GK", 120, function(v) _G.AutoGK = v end)
 
--- LOOP SPEED SETTING (KHÔNG GIẬT)
-local SpeedLabel = Instance.new("TextLabel", Main); SpeedLabel.Size = UDim2.new(1, 0, 0, 20); SpeedLabel.Position = UDim2.new(0, 0, 0, 180); SpeedLabel.BackgroundTransparency = 1; SpeedLabel.Text = "LOOP SPEED"; SpeedLabel.TextColor3 = Color3.new(0.8, 0.8, 0.8); SpeedLabel.Font = FontStyle; SpeedLabel.TextSize = 14
+-- SPEED INPUT
+local SpeedLabel = Instance.new("TextLabel", Main); SpeedLabel.Size = UDim2.new(1, 0, 0, 20); SpeedLabel.Position = UDim2.new(0, 0, 0, 180); SpeedLabel.BackgroundTransparency = 1; SpeedLabel.Text = "LOOP SPEED (40-60 is best)"; SpeedLabel.TextColor3 = Color3.new(0.8, 0.8, 0.8); SpeedLabel.Font = FontStyle; SpeedLabel.TextSize = 14
 local SpeedInp = Instance.new("TextBox", Main); SpeedInp.Size = UDim2.new(0, 100, 0, 40); SpeedInp.Position = UDim2.new(0.5, -50, 0, 205); SpeedInp.BackgroundColor3 = Color3.fromRGB(40, 40, 40); SpeedInp.Text = "16"; SpeedInp.TextColor3 = NeonBlue; SpeedInp.Font = FontStyle; SpeedInp.TextSize = 18; Instance.new("UICorner", SpeedInp); Instance.new("UIStroke", SpeedInp).Color = NeonBlue
 SpeedInp.FocusLost:Connect(function() _G.Speed = tonumber(SpeedInp.Text) or 16 end)
 
--- NÚT TẮT SCRIPT
-local ExitBtn = Instance.new("TextButton", Main)
-ExitBtn.Size = UDim2.new(1, -30, 0, 45); ExitBtn.Position = UDim2.new(0, 15, 0, 410); ExitBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0); ExitBtn.Text = "TẮT SCRIPT"; ExitBtn.TextColor3 = Color3.new(1, 1, 1); ExitBtn.Font = FontStyle; ExitBtn.TextSize = 16; Instance.new("UICorner", ExitBtn)
-ExitBtn.MouseButton1Click:Connect(function() _G.Active = false; G:Destroy() end)
+local ExitBtn = Instance.new("TextButton", Main); ExitBtn.Size = UDim2.new(1, -30, 0, 45); ExitBtn.Position = UDim2.new(0, 15, 0, 410); ExitBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0); ExitBtn.Text = "TẮT SCRIPT"; ExitBtn.TextColor3 = Color3.new(1, 1, 1); ExitBtn.Font = FontStyle; ExitBtn.TextSize = 16; Instance.new("UICorner", ExitBtn)
+ExitBtn.MouseButton1Click:Connect(function() _G.Active = false; if LP.Character then LP.Character.Humanoid.WalkSpeed = 16 end; G:Destroy() end)
 
--- LOGIC CORE
-RS.Heartbeat:Connect(function()
-    if not _G.Active or not LP.Character then return end
-    local hrp = LP.Character:FindFirstChild("HumanoidRootPart")
+-- LOGIC XỬ LÝ CHÍNH
+RS.Stepped:Connect(function()
+    if not _G.Active or not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then return end
+    local hrp = LP.Character.HumanoidRootPart
+    local hum = LP.Character.Humanoid
     local ball = GetBall()
-    if not hrp or not ball then return end
 
-    -- 1. LOOP SPEED (FIX GIẬT)
-    if _G.Speed > 16 and LP.Character.Humanoid.MoveDirection.Magnitude > 0 then
-        hrp.CFrame = hrp.CFrame + (LP.Character.Humanoid.MoveDirection * (_G.Speed / 100))
-    end
-
-    -- 2. KAISER STEAL (3 STUDS)
-    if _G.BallSteal and (hrp.Position - ball.Position).Magnitude < 3 then
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LP and p.Team ~= LP.Team and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                if (p.Character.HumanoidRootPart.Position - ball.Position).Magnitude < 5 then
-                    firetouchinterest(hrp, ball, 0); task.wait(); firetouchinterest(hrp, ball, 1)
-                    ball.CFrame = hrp.CFrame * CFrame.new(0, 0, -2)
-                end
-            end
+    -- 1. FIXED SPEED (LOOP)
+    if _G.Speed > 16 then
+        if hum.MoveDirection.Magnitude > 0 then
+            hrp.CFrame = hrp.CFrame + (hum.MoveDirection * (_G.Speed / 45)) -- Tăng tốc dựa trên hướng đi
         end
     end
 
-    -- 3. AUTO GK (PHÒNG THỦ KHUNG THÀNH)
-    if _G.AutoGK then
-        local goal = workspace:FindFirstChild(LP.Team.Name .. "Goal") or workspace:FindFirstChild("Goal") -- Tìm khung thành đội mình
-        if goal and (ball.Position - goal.Position).Magnitude < 35 then -- Nếu bóng gần khung thành 35 studs
-            hrp.CFrame = ball.CFrame * CFrame.new(0, 0, 1) -- Dịch chuyển đón đầu bóng
+    if ball then
+        -- 2. ENHANCED STEAL BALL
+        if _G.BallSteal then
+            local dist = (hrp.Position - ball.Position).Magnitude
+            if dist < 8 then -- Tăng phạm vi hút bóng lên 8 studs
+                firetouchinterest(hrp, ball, 0)
+                RS.RenderStepped:Wait()
+                firetouchinterest(hrp, ball, 1)
+                ball.CFrame = hrp.CFrame * CFrame.new(0, 0, -2.5) -- Ép bóng vào chân
+            end
+        end
+
+        -- 3. AUTO GK (TELEPORT CẢN PHÁ)
+        if _G.AutoGK then
+            local myTeam = LP.Team and LP.Team.Name or ""
+            local goal = workspace:FindFirstChild(myTeam .. "Goal") or workspace:FindFirstChild("Goal")
             
-            -- Phân loại: GK hoặc Người chơi thường
-            if LP:FindFirstChild("IsGK") or LP.Name:find("GK") then
-                -- Logic GK: Bắt bóng (Giả lập Catch)
-                firetouchinterest(hrp, ball, 0); task.wait(); firetouchinterest(hrp, ball, 1)
-            else
-                -- Logic Thường: Xoạc bóng (Slide Tackle)
-                local VirtualUser = game:GetService("VirtualUser")
-                VirtualUser:ClickButton1(Vector2.new(0,0)) -- Giả lập nhấn chuột/nút xoạc
+            if goal and (ball.Position - goal.Position).Magnitude < 15 then -- Chỉ kích hoạt khi bóng sát lưới
+                hrp.CFrame = ball.CFrame * CFrame.new(0, 0, 1) -- Tele tới bóng
+                
+                -- Thực hiện hành động cản phá
+                firetouchinterest(hrp, ball, 0)
+                task.wait(0.05)
+                firetouchinterest(hrp, ball, 1)
+                
+                -- Giả lập bấm phím xoạc/bắt
+                game:GetService("VirtualUser"):ClickButton1(Vector2.new(0,0))
             end
         end
     end
