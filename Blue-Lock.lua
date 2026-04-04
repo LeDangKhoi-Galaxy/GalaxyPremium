@@ -1,8 +1,8 @@
 --[[ 
-   BLUE LOCK: RIVALS - BALL CAMERA CONTROL V7
-   - FEATURE: Camera locks to Ball when Control is ON.
-   - CONTROL: Ball follows Camera direction (Shift-lock style).
-   - UI: Slider only shows when Ball Control is ON.
+   BLUE LOCK: RIVALS - KAISER GLITCH V9 (ELITE)
+   - FEATURE: Smart Enemy Steal (3 Studs Range).
+   - LOGIC: Only steals from Enemy Team players.
+   - CAMERA: Predator Camera Focus.
    - AUTHENTIC BY: LeDangKhoi
 ]]
 
@@ -13,7 +13,7 @@ local Camera = workspace.CurrentCamera
 local NeonBlue = Color3.fromRGB(0, 170, 255)
 local FontStyle = Enum.Font.GothamBold
 
--- ANTI-KICK SYSTEM
+-- ANTI-KICK & SECURITY
 local RawMetatable = getrawmetatable(game)
 local OldNamecall = RawMetatable.__namecall
 if setreadonly then setreadonly(RawMetatable, false) end
@@ -23,7 +23,7 @@ RawMetatable.__namecall = newcclosure(function(self, ...)
 end)
 if setreadonly then setreadonly(RawMetatable, true) end
 
--- UI CLEANUP
+-- UI SETUP
 if LP.PlayerGui:FindFirstChild("BlueLock_Custom") then LP.PlayerGui.BlueLock_Custom:Destroy() end
 local G = Instance.new("ScreenGui", LP.PlayerGui); G.Name = "BlueLock_Custom"; G.ResetOnSpawn = false
 
@@ -43,30 +43,28 @@ Title.Size = UDim2.new(1, 0, 0, 50); Title.BackgroundColor3 = NeonBlue; Title.Te
 
 local SliderLabel, SliderBG
 
--- HÀM NÚT BẤM
 local function CreateBtn(name, y, callback)
     local btn = Instance.new("TextButton", Main); btn.Size = UDim2.new(1, -30, 0, 45); btn.Position = UDim2.new(0, 15, 0, y); btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30); btn.Text = name .. ": OFF"; btn.TextColor3 = Color3.new(1, 1, 1); btn.Font = FontStyle; btn.TextSize = 16; Instance.new("UICorner", btn)
     local state = false
     btn.MouseButton1Click:Connect(function()
         state = not state; btn.Text = name .. (state and ": ON" or ": OFF"); btn.TextColor3 = state and NeonBlue or Color3.new(1, 1, 1)
         callback(state)
-        if name == "BALL CAMERA CONTROL" then
+        if name == "PREDATOR CONTROL" then
             SliderLabel.Visible = state; SliderBG.Visible = state
-            -- Trả camera về nhân vật nếu tắt
             if not state then Camera.CameraSubject = LP.Character.Humanoid end
         end
     end)
 end
 
-CreateBtn("AUTO STEAL", 65, function(v) _G.BallSteal = v end)
+CreateBtn("STEAL BALL", 65, function(v) _G.BallSteal = v end)
 CreateBtn("CONTROL BALL", 120, function(v) _G.BallControl = v end)
 
--- WALK SPEED TEXTBOX
+-- WALK SPEED
 local SpeedLabel = Instance.new("TextLabel", Main); SpeedLabel.Size = UDim2.new(1, 0, 0, 25); SpeedLabel.Position = UDim2.new(0, 0, 0, 180); SpeedLabel.BackgroundTransparency = 1; SpeedLabel.Text = "WALK SPEED"; SpeedLabel.TextColor3 = Color3.new(0.8, 0.8, 0.8); SpeedLabel.Font = FontStyle; SpeedLabel.TextSize = 14
 local SpeedInp = Instance.new("TextBox", Main); SpeedInp.Size = UDim2.new(0, 100, 0, 40); SpeedInp.Position = UDim2.new(0.5, -50, 0, 210); SpeedInp.BackgroundColor3 = Color3.fromRGB(40, 40, 40); SpeedInp.Text = "16"; SpeedInp.TextColor3 = NeonBlue; SpeedInp.Font = FontStyle; SpeedInp.TextSize = 18; Instance.new("UICorner", SpeedInp); Instance.new("UIStroke", SpeedInp).Color = NeonBlue
 SpeedInp.FocusLost:Connect(function() _G.Speed = tonumber(SpeedInp.Text) or 16 end)
 
--- SLIDER TỐC ĐỘ BÓNG
+-- BALL SPEED SLIDER
 local function CreateBallSlider(y, min, max, default)
     SliderLabel = Instance.new("TextLabel", Main); SliderLabel.Size = UDim2.new(1, 0, 0, 25); SliderLabel.Position = UDim2.new(0, 0, 0, y); SliderLabel.BackgroundTransparency = 1; SliderLabel.Text = "CONTROL SPEED: " .. default; SliderLabel.TextColor3 = Color3.new(1, 1, 1); SliderLabel.Font = FontStyle; SliderLabel.TextSize = 15; SliderLabel.Visible = false
     SliderBG = Instance.new("Frame", Main); SliderBG.Size = UDim2.new(1, -60, 0, 8); SliderBG.Position = UDim2.new(0, 30, 0, y + 35); SliderBG.BackgroundColor3 = Color3.fromRGB(50, 50, 50); SliderBG.Visible = false; Instance.new("UICorner", SliderBG)
@@ -90,11 +88,20 @@ CreateBallSlider(270, 0, 300, 50)
 local Close = Instance.new("TextButton", Main); Close.Size = UDim2.new(1, -40, 0, 45); Close.Position = UDim2.new(0, 20, 0, 355); Close.BackgroundColor3 = Color3.fromRGB(60, 0, 0); Close.Text = "EXIT SCRIPT"; Close.TextColor3 = Color3.new(1, 1, 1); Close.Font = FontStyle; Close.TextSize = 16; Instance.new("UICorner", Close)
 Close.MouseButton1Click:Connect(function() _G.Active = false; Camera.CameraSubject = LP.Character.Humanoid; G:Destroy() end)
 
+-- HÀM KIỂM TRA ĐỘI ĐỊCH
+local function IsEnemy(player)
+    if player and player ~= LP and player.Team ~= LP.Team then
+        return true
+    end
+    return false
+end
+
 -- LOGIC CORE
 RS.Heartbeat:Connect(function()
-    if not _G.Active or not LP.Character then return end
+    if not _G.Active or not LP.Character or not LP.Character:FindFirstChild("HumanoidRootPart") then return end
     pcall(function()
         local hrp = LP.Character.HumanoidRootPart
+        
         -- Walk Speed
         if _G.Speed > 16 and LP.Character.Humanoid.MoveDirection.Magnitude > 0 then 
             LP.Character:TranslateBy(LP.Character.Humanoid.MoveDirection * (_G.Speed / 125)) 
@@ -104,14 +111,27 @@ RS.Heartbeat:Connect(function()
             if obj:IsA("BasePart") and (obj.Name:lower():find("ball") or obj.Name:lower():find("football")) then
                 local dist = (hrp.Position - obj.Position).Magnitude
                 
-                if _G.BallControl then
-                    -- CHUYỂN CAMERA SANG BÓNG
+                -- SMART KAISER STEAL (3 Studs)
+                if _G.BallSteal and not _G.BallControl then
+                    -- Tìm xem ai đang đứng gần bóng nhất
+                    for _, p in pairs(Players:GetPlayers()) do
+                        if IsEnemy(p) and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                            local enemyDist = (p.Character.HumanoidRootPart.Position - obj.Position).Magnitude
+                            -- Nếu bóng ở trong chân đội địch (khoảng cách < 5) và Khôi ở gần (< 3 studs)
+                            if enemyDist < 5 and dist < 3 then
+                                firetouchinterest(hrp, obj, 0)
+                                task.wait()
+                                firetouchinterest(hrp, obj, 1)
+                                obj.CFrame = hrp.CFrame * CFrame.new(0, -1, -2)
+                            end
+                        end
+                    end
+                
+                -- PREDATOR CONTROL
+                elseif _G.BallControl then
                     Camera.CameraSubject = obj
-                    -- BÓNG DI CHUYỂN THEO HƯỚNG NHÌN CAMERA
-                    local targetPos = Camera.CFrame.Position + (Camera.CFrame.LookVector * 15)
-                    obj.Velocity = (targetPos - obj.Position) * (_G.BallFlySpeed / 5)
-                elseif _G.BallSteal and dist < 25 then
-                    obj.Velocity = Vector3.new(0, 0, 0); obj.CFrame = hrp.CFrame * CFrame.new(0, -1.2, -3)
+                    local targetPos = Camera.CFrame.Position + (Camera.CFrame.LookVector * 18)
+                    obj.Velocity = (targetPos - obj.Position) * (_G.BallFlySpeed / 4)
                 end
             end
         end
