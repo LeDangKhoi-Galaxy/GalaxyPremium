@@ -1,22 +1,17 @@
--- Cấu hình độ nhạy tổng quát cho mọi dòng súng
-local Sensi_Config = {
-    ["SMG"] = {force = 1.2, smooth = 0.4},  -- Súng sấy: Kéo nhanh, mượt
-    ["Shotgun"] = {force = 2.5, smooth = 0.2}, -- Shotgun: Lực kéo mạnh để vẩy
-    ["Rifle"] = {force = 1.0, smooth = 0.5}   -- Súng trường: Ổn định tầm xa
-}
+-- Cấu hình khóa mục tiêu
+local Aim_Height_Offset = 0.85 -- Tỉ lệ chiều cao vùng đầu
+local Stickiness = 100 -- Độ bám của tâm (0-100)
 
-function ApplyAimAssist(gun_type)
-    local setting = Sensi_Config[gun_type] or Sensi_Config["Rifle"]
+function AutoHeadAim(enemy_pos, current_crosshair)
+    -- Xác định tọa độ chính xác của đầu dựa trên khung xương đối thủ
+    local target_head_y = enemy_pos.y + (enemy_pos.height * Aim_Height_Offset)
     
-    -- Giả lập lệnh hệ thống điều chỉnh độ nhạy cảm ứng
-    SetSystemSensitivity(setting.force)
-    SetTouchSmoothing(setting.smooth)
-end
-
--- Kích hoạt khi nhấn nút bắn
-function OnFire(is_pressing)
-    if is_pressing then
-        -- Tự động tính toán để tâm không văng quá đầu
-        LockVerticalAxis(Head_Coordinate) 
+    if current_crosshair.y > target_head_y then
+        -- Nếu tâm đang ở dưới đầu (ngực), thực hiện kéo nhanh
+        local pull_force = (current_crosshair.y - target_head_y) * (Stickiness / 100)
+        return current_crosshair.y - pull_force
+    else
+        -- Khi tâm đã chạm đầu, giữ nguyên tọa độ để không bị lố
+        return target_head_y
     end
 end
