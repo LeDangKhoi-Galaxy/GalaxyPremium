@@ -1,27 +1,26 @@
--- Cấu hình GALAXY Premium v4.4 - TOP HEAD MODULE
-local Top_Head_Offset = 0.95 -- Ép tâm vào đỉnh đầu (vị trí cao nhất)
-local Lock_Speed = 0.98      -- Tốc độ khóa mục tiêu (gần như tức thì)
-local Anti_Over_Lock = true  -- Chống lố qua khỏi đầu
+-- GALAXY Premium v4.4 - HARD LOCK MODULE
+local Top_Head_Offset = 0.95 -- Tọa độ đỉnh đầu
+local Lock_Threshold = 1.0   -- Khoảng cách sai số để kích hoạt khóa (pixel)
+local is_locked = false      -- Trạng thái khóa
 
-function AimToTopHead(enemy_pos, current_crosshair)
-    -- Xác định tọa độ đỉnh đầu
-    local target_top_head_y = enemy_pos.y + (enemy_pos.height * Top_Head_Offset)
-    
-    -- Tính toán khoảng cách Delta
-    local delta_y = target_top_head_y - current_crosshair.y
-    
-    -- Khi người dùng bắt đầu kéo (delta_y âm khi kéo từ dưới lên)
-    if math.abs(delta_y) > 0.1 then
-        -- Lực kéo siêu mạnh hướng thẳng về đỉnh đầu
-        local final_move = current_crosshair.y + (delta_y * Lock_Speed)
-        
-        -- Cơ chế chặn: Nếu tọa độ mới vượt quá đỉnh đầu, ép trả lại đúng Top_Head
-        if Anti_Over_Lock and final_move < target_top_head_y then
-            return target_top_head_y
-        end
-        
-        return final_move
+function OnFireButton(is_pressing, enemy_pos, current_crosshair)
+    -- Nếu thả nút bắn: Reset trạng thái khóa ngay lập tức
+    if not is_pressing then
+        is_locked = false
+        return current_crosshair.y
     end
-    
-    return target_top_head_y
+
+    -- Xác định tọa độ mục tiêu đỉnh đầu
+    local target_y = enemy_pos.y + (enemy_pos.height * Top_Head_Offset)
+    local delta_y = math.abs(current_crosshair.y - target_y)
+
+    -- Cơ chế khóa chặt:
+    if is_locked or delta_y <= Lock_Threshold then
+        is_locked = true -- Kích hoạt trạng thái khóa chặt
+        return target_y  -- Luôn trả về tọa độ đầu, bất chấp tay bạn đang kéo đi đâu
+    else
+        -- Nếu chưa chạm đầu: Tiếp tục hỗ trợ kéo lên với lực hút mạnh
+        local pull_speed = 0.9 -- Tốc độ kéo lên
+        return current_crosshair.y + (target_y - current_crosshair.y) * pull_speed
+    end
 end
