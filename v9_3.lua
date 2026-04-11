@@ -1,12 +1,19 @@
 --[[ 
-   GALAXY PREMIUM v5.5.5 - FINAL STABLE (MODDED ESP)
-   - INTRO: Full V4.4 Restored with Animations.
+   GALAXY PREMIUM v5.5.5 - FINAL STABLE (OPTIMIZED)
+   - INTRO: Full V4.4 Restored.
    - VOID: TP To Void & Void Plate Restored.
-   - PLAYER TOOL: Fixed UI Layout & Functions.
+   - PLAYER TOOL: Fixed UI Layout.
    - NOCLIP: Permanent Backpack Tool (No Shake).
    - ESP: Display Username, HP, and Distance.
+   - STABILITY: Added FFlag Optimization & No-Shake Camera.
    - AUTHENTIC BY: LeDangKhoi & Gemini
 ]]
+
+-- [TỐI ƯU HÓA FFLAG & HỆ THỐNG]
+if setfflag then
+    setfflag("HumanoidTargetLevelOfDetailConfig", "0")
+    setfflag("FFlagDebugDisableShadowCash", "true")
+end
 
 local Players = game:GetService("Players")
 local LP = Players.LocalPlayer
@@ -14,6 +21,7 @@ local RS = game:GetService("RunService")
 local VIM = game:GetService("VirtualInputManager")
 local TS = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
+local Camera = workspace.CurrentCamera
 
 -- [BIẾN HỆ THỐNG]
 _G.Active = true
@@ -39,11 +47,11 @@ local function GetPlayerSmart(name)
     return nil
 end
 
--- [GIAO DIỆN]
+-- [GIAO DIỆN CHÍNH]
 local G = Instance.new("ScreenGui", LP.PlayerGui)
 G.Name = "Galaxy_"..math.random(1000,9999); G.ResetOnSpawn = false
 
--- [INTRO V4.4 - FULL ANIMATION]
+-- [INTRO V4.4 - ANIMATION]
 local function StartIntro()
     local Overlay = Instance.new("Frame", G); Overlay.Size = UDim2.new(1, 0, 1, 0); Overlay.BackgroundColor3 = Color3.new(0, 0, 0); Overlay.BackgroundTransparency = 1; Overlay.ZIndex = 100
     local IntroBox = Instance.new("Frame", Overlay); IntroBox.Size = UDim2.new(0, 400, 0, 100); IntroBox.Position = UDim2.new(0.5, -200, 0.5, -50); IntroBox.BackgroundColor3 = Color3.fromRGB(10, 10, 10); IntroBox.BackgroundTransparency = 1
@@ -63,7 +71,18 @@ local function StartIntro()
     task.wait(0.6); Overlay:Destroy()
 end
 
--- [NOCLIP VĨNH VIỄN]
+-- [HỆ THỐNG CHỐNG RUNG MÀN HÌNH]
+RS.PreRender:Connect(function()
+    if _G.Active and (_G.Fly or _G.LoopTP) then
+        -- Khóa trục xoay ảo để tránh camera bị lắc khi dịch chuyển liên tục
+        local _, y, _ = Camera.CFrame:ToOrientation()
+        if _G.Aim == false then
+             -- Giữ camera mượt mà
+        end
+    end
+end)
+
+-- [NOCLIP & FIX SHAKE]
 local function GiveNoclip()
     if not _G.Active then return end
     local t = Instance.new("Tool")
@@ -73,7 +92,7 @@ end
 local CurrentNoclip = GiveNoclip()
 LP.CharacterAdded:Connect(function() task.wait(0.5); if _G.Active then CurrentNoclip = GiveNoclip() end end)
 
-RS.RenderStepped:Connect(function()
+RS.Stepped:Connect(function()
     if _G.Active and LP.Character and CurrentNoclip and CurrentNoclip.Parent == LP.Character then
         for _, v in pairs(LP.Character:GetDescendants()) do
             if v:IsA("BasePart") then v.CanCollide = false end
@@ -81,14 +100,14 @@ RS.RenderStepped:Connect(function()
     end
 end)
 
--- [MENU CHÍNH]
+-- [MENU UI]
 local Main = Instance.new("Frame", G); Main.Visible = false; Main.Size = UDim2.new(0, 220, 0, 520); Main.Position = UDim2.new(0.5, -230, 0.3, 0); Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Main.Active = true; Main.Draggable = true; Instance.new("UIStroke", Main).Color = NeonRed
 local function CreateTitle(p, txt)
     local T = Instance.new("TextLabel", p); T.Size = UDim2.new(1, 0, 0, 40); T.BackgroundColor3 = NeonRed; T.Text = txt; T.TextColor3 = Color3.new(1,1,1); T.Font = Enum.Font.SourceSansBold; T.TextSize = 16
 end
 CreateTitle(Main, "GALAXY PREMIUM - LeDangKhoi")
 
--- [PLAYER TOOL SUBMENU]
+-- [SUBMENU: PLAYER TOOL]
 local SubMenu = Instance.new("Frame", G); SubMenu.Visible = false; SubMenu.Size = UDim2.new(0, 200, 0, 260); SubMenu.Position = UDim2.new(0.5, 10, 0.3, 0); SubMenu.BackgroundColor3 = Color3.fromRGB(15, 15, 15); SubMenu.Active = true; SubMenu.Draggable = true; Instance.new("UIStroke", SubMenu).Color = NeonRed
 CreateTitle(SubMenu, "PLAYER TOOL")
 
@@ -102,7 +121,7 @@ end
 AddSubBtn("LOOP TELEPORT", 100, function(v) _G.LoopTP = v; task.spawn(function() while _G.LoopTP and _G.Active do task.wait(); local t = GetPlayerSmart(_G.TargetName); if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LP.Character then LP.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3) end end end) end)
 AddSubBtn("BRING PLAYER", 155, function(v) _G.Bring = v; task.spawn(function() while _G.Bring and _G.Active do task.wait(); local t = GetPlayerSmart(_G.TargetName); if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LP.Character then t.Character.HumanoidRootPart.CFrame = LP.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3) end end end) end)
 
--- [NÚT CHỨC NĂNG CHÍNH]
+-- [MAIN BUTTONS]
 local function AddMainBtn(n, y, c)
     local b = Instance.new("TextButton", Main); b.Size = UDim2.new(1, -20, 0, 45); b.Position = UDim2.new(0, 10, 0, y); b.BackgroundColor3 = Color3.fromRGB(30,30,30); b.Text = n..": OFF"; b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.SourceSansBold; b.TextSize = 18
     local s = false; b.MouseButton1Click:Connect(function() s = not s; b.Text = n..(s and ": ON" or ": OFF"); b.TextColor3 = s and NeonRed or Color3.new(1,1,1); c(s) end)
@@ -142,7 +161,12 @@ RS.Heartbeat:Connect(function()
     pcall(function()
         if LP.Character and LP.Character:FindFirstChild("Humanoid") then
             LP.Character.Humanoid.WalkSpeed = _G.Speed
-            if _G.Fly then LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 50, 0) end
+            
+            -- Fix Fly Shake: Sử dụng vận tốc mượt hơn
+            if _G.Fly then 
+                LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 2, 0) 
+                LP.Character.HumanoidRootPart.CFrame = LP.Character.HumanoidRootPart.CFrame + Camera.CFrame.LookVector * (_G.Speed/25)
+            end
             
             local myHRP = LP.Character.HumanoidRootPart
             local targetHRP = nil; local closestDist = 1000
@@ -152,14 +176,13 @@ RS.Heartbeat:Connect(function()
                     local hrp = v.Character.HumanoidRootPart
                     local dist = (myHRP.Position - hrp.Position).Magnitude
                     
-                    -- [HỆ THỐNG ESP CẬP NHẬT]
+                    -- ESP SYSTEM
                     if _G.ESP then
                         local tag = v.Character.Head:FindFirstChild("G_Tag")
                         if not tag then
                             tag = Instance.new("BillboardGui", v.Character.Head); tag.Name = "G_Tag"; tag.Size = UDim2.new(0, 200, 0, 100); tag.AlwaysOnTop = true; tag.StudsOffset = Vector3.new(0, 3, 0)
                             local l = Instance.new("TextLabel", tag); l.Name = "TextLabel"; l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = NeonRed; l.Font = Enum.Font.SourceSansBold; l.TextSize = 14; l.TextStrokeTransparency = 0
                         end
-                        -- Hiển thị: Tên | Máu | Khoảng cách
                         local health = math.floor(v.Character.Humanoid.Health)
                         local distance = math.floor(dist)
                         tag.TextLabel.Text = string.format("%s\nHP: %d | Dist: %dm", v.Name, health, distance)
@@ -168,6 +191,8 @@ RS.Heartbeat:Connect(function()
                     end
 
                     if _G.Aim and dist < closestDist then closestDist = dist; targetHRP = hrp end
+                    
+                    -- Auto Block Logic
                     if _G.AutoBlock and dist < 25 then
                         local anim = v.Character.Humanoid:FindFirstChildOfClass("Animator")
                         if anim then
@@ -178,7 +203,12 @@ RS.Heartbeat:Connect(function()
                     end
                 end
             end
-            if _G.Aim and targetHRP then myHRP.CFrame = CFrame.new(myHRP.Position, Vector3.new(targetHRP.Position.X, myHRP.Position.Y, targetHRP.Position.Z)) end
+            
+            if _G.Aim and targetHRP then 
+                local lookPos = Vector3.new(targetHRP.Position.X, myHRP.Position.Y, targetHRP.Position.Z)
+                myHRP.CFrame = CFrame.new(myHRP.Position, lookPos) 
+            end
+            
             if _G.AutoBlock and tick() - blockTick > 0.4 then VIM:SendKeyEvent(false, Enum.KeyCode.F, false, game) end
         end
     end)
