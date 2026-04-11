@@ -1,5 +1,6 @@
 --[[ 
-    GALAXY PREMIUM v5.0 - THE STRONGEST UPDATE
+    GALAXY PREMIUM v5.1 - FLY FIXED & NO SHAKE
+    - FIXED: Fly Mode (Using BodyVelocity for stability).
     - AUTO-ACTIVATE: No Camera Shake (Absolute for TSB) after Intro.
     - ADDED: Noclip Tool (Auto-backpack on spawn).
     - RETAINED: Intro v4.4, Dark Potato Style, Aim Lock Fixed.
@@ -41,7 +42,7 @@ local function ApplyFFlags()
     workspace.DescendantAdded:Connect(Optimize)
 end
 
--- DỌN DẸP UI
+-- DỌN DẸP UI CŨ
 for _, v in pairs(LP.PlayerGui:GetChildren()) do
     if v.Name:find("Galaxy") then v:Destroy() end
 end
@@ -59,12 +60,12 @@ _G.VoidActive = false; _G.Noclip = false
 local blockTick = 0
 local LastPosBeforeVoid = nil
 local CurrentVoidPlate = nil
+local BV = nil -- Cho Fly Mode
 
 -- [CHỨC NĂNG CHỐNG RUNG CAMERA TUYỆT ĐỐI - CHẠY NGẦM]
 local function EnableNoShake()
     task.spawn(function()
         while _G.Active do
-            -- Xóa các UI gây rung màn hình đặc trưng của TSB
             local shakeNames = {"ScreenShake", "Shake", "CameraShake", "CamShake"}
             for _, name in pairs(shakeNames) do
                 local shake = LP.PlayerGui:FindFirstChild(name)
@@ -118,7 +119,6 @@ local function StartIntro()
     TS:Create(IntroText, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
     task.wait(0.6); Overlay:Destroy()
     
-    -- Kích hoạt sau Intro
     ApplyFFlags()
     EnableNoShake()
     GiveNoclipTool()
@@ -163,7 +163,10 @@ end
 
 AddMainBtn("SMART AIM", 50, function(v) _G.Aim = v end)
 AddMainBtn("AUTO BLOCK", 105, function(v) _G.AutoBlock = v end)
-AddMainBtn("FLY MODE", 160, function(v) _G.Fly = v end)
+AddMainBtn("FLY MODE", 160, function(v) 
+    _G.Fly = v
+    if not v and BV then BV:Destroy(); BV = nil end
+end)
 AddMainBtn("PLAYER ESP", 215, function(v) _G.ESP = v end)
 AddMainBtn("PLAYER TOOL", 270, function(v) SubMenu.Visible = v end)
 AddMainBtn("TP TO VOID", 325, function(v) 
@@ -183,7 +186,7 @@ end)
 local Inp = Instance.new("TextBox", Main); Inp.Size = UDim2.new(1, -20, 0, 45); Inp.Position = UDim2.new(0, 10, 0, 380); Inp.BackgroundColor3 = Color3.fromRGB(30,30,30); Inp.Text = "TỐC ĐỘ (16)"; Inp.TextColor3 = NeonRed; Inp.Font = Enum.Font.SourceSansBold; Inp.TextSize = 18; Inp.FocusLost:Connect(function() _G.Speed = tonumber(Inp.Text) or 16 end)
 
 local Close = Instance.new("TextButton", Main); Close.Size = UDim2.new(1,-20,0,40); Close.Position = UDim2.new(0,10,0,435); Close.BackgroundColor3 = Color3.new(0.2,0,0); Close.Text = "HỦY SCRIPT"; Close.TextColor3 = Color3.new(1,1,1); Close.Font = Enum.Font.SourceSansBold
-Close.MouseButton1Click:Connect(function() _G.Active = false; G:Destroy() end)
+Close.MouseButton1Click:Connect(function() _G.Active = false; if BV then BV:Destroy() end; G:Destroy() end)
 
 local ToggleBtn = Instance.new("TextButton", G); ToggleBtn.Visible = false; ToggleBtn.Size = UDim2.new(0, 85, 0, 35); ToggleBtn.Position = UDim2.new(0, 10, 0.5, 0); ToggleBtn.BackgroundColor3 = Color3.new(0,0,0); ToggleBtn.Text = "GALAXY"; ToggleBtn.TextColor3 = NeonRed; ToggleBtn.Font = Enum.Font.SourceSansBold; ToggleBtn.TextSize = 12; Instance.new("UIStroke", ToggleBtn).Color = NeonRed
 ToggleBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
@@ -192,49 +195,65 @@ ToggleBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible e
 RS.Heartbeat:Connect(function()
     if not _G.Active then return end
     pcall(function()
-        LP.Character.Humanoid.WalkSpeed = _G.Speed
+        local char = LP.Character
+        local hrp = char.HumanoidRootPart
+        local hum = char.Humanoid
+
+        hum.WalkSpeed = _G.Speed
         
+        -- Fly Mode Logic (BodyVelocity)
+        if _G.Fly then
+            if not BV then
+                BV = Instance.new("BodyVelocity", hrp)
+                BV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            end
+            BV.Velocity = hum.MoveDirection * _G.Speed + Vector3.new(0, 2, 0) -- Giữ độ cao ổn định
+        elseif BV then
+            BV:Destroy()
+            BV = nil
+        end
+
         -- Noclip Logic
         if _G.Noclip then
-            for _, part in pairs(LP.Character:GetDescendants()) do
+            for _, part in pairs(char:GetDescendants()) do
                 if part:IsA("BasePart") then part.CanCollide = false end
             end
         end
 
-        local myHRP = LP.Character.HumanoidRootPart
+        local myHRP = hrp
         local targetHRP = nil
         local closestDist = 1000 
 
         for _, v in pairs(Players:GetPlayers()) do
             if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-                local head = v.Character:FindFirstChild("Head")
-                local hum = v.Character:FindFirstChild("Humanoid")
-                local hrp = v.Character.HumanoidRootPart
+                local eHead = v.Character:FindFirstChild("Head")
+                local eHum = v.Character:FindFirstChild("Humanoid")
+                local eHRP = v.Character.HumanoidRootPart
 
                 -- ESP
-                if _G.ESP and head then
-                    local tag = head:FindFirstChild("G_Tag")
+                if _G.ESP and eHead then
+                    local tag = eHead:FindFirstChild("G_Tag")
                     if not tag then
-                        tag = Instance.new("BillboardGui", head); tag.Name = "G_Tag"; tag.Size = UDim2.new(0, 200, 0, 100); tag.AlwaysOnTop = true; tag.StudsOffset = Vector3.new(0, 3, 0)
+                        tag = Instance.new("BillboardGui", eHead); tag.Name = "G_Tag"; tag.Size = UDim2.new(0, 200, 0, 100); tag.AlwaysOnTop = true; tag.StudsOffset = Vector3.new(0, 3, 0)
                         local l = Instance.new("TextLabel", tag); l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = NeonRed; l.Font = Enum.Font.SourceSansBold; l.TextSize = 18
                     end
-                    tag.TextLabel.Text = v.DisplayName.."\nHP: "..math.floor(hum.Health).."\n"..math.floor((myHRP.Position - hrp.Position).Magnitude).."m"
-                elseif not _G.ESP and head and head:FindFirstChild("G_Tag") then
-                    head.G_Tag:Destroy()
+                    tag.TextLabel.Text = v.DisplayName.."\nHP: "..math.floor(eHum.Health).."\n"..math.floor((myHRP.Position - eHRP.Position).Magnitude).."m"
+                elseif not _G.ESP and eHead and eHead:FindFirstChild("G_Tag") then
+                    eHead.G_Tag:Destroy()
                 end
 
                 -- AIM
-                if _G.Aim and hum.Health > 0 then
-                    local dist = (myHRP.Position - hrp.Position).Magnitude
+                if _G.Aim and eHum.Health > 0 then
+                    local dist = (myHRP.Position - eHRP.Position).Magnitude
                     if dist < closestDist then
                         closestDist = dist
-                        targetHRP = hrp
+                        targetHRP = eHRP
                     end
                 end
 
                 -- AUTO BLOCK
-                if _G.AutoBlock and (myHRP.Position - hrp.Position).Magnitude < 25 then
-                    local anim = hum:FindFirstChildOfClass("Animator")
+                if _G.AutoBlock and (myHRP.Position - eHRP.Position).Magnitude < 25 then
+                    local anim = eHum:FindFirstChildOfClass("Animator")
                     if anim then
                         for _, t in pairs(anim:GetPlayingAnimationTracks()) do
                             if t.IsPlaying and t.Speed > 1.1 then
