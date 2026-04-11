@@ -1,7 +1,8 @@
 --[[ 
-    GALAXY PREMIUM v5.5 - 3D DIRECTIONAL FLY
-    - FIXED: Fly Mode now supports Up/Down based on Camera Angle + Joystick.
-    - RETAINED: All previous features (Player Tool, No Shake, Noclip Tool).
+    GALAXY PREMIUM v5.6 - IY STYLE FLY
+    - IMPROVED: Fly Mode (Infinite Yield Logic) - Smooth 3D Movement.
+    - STABILITY: Added BodyGyro to keep character upright while flying.
+    - FEATURES: Player Tool, No Shake, Noclip Tool, Speed Control.
     - AUTHENTIC BY: LeDangKhoi 
 ]]
 
@@ -13,7 +14,7 @@ local TS = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 local Camera = workspace.CurrentCamera
 
--- [FFLAG DARK POTATO STYLE]
+-- [FFLAG OPTIMIZATION]
 local function ApplyFFlags()
     settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
     Lighting.GlobalShadows = false
@@ -22,7 +23,6 @@ local function ApplyFFlags()
     Lighting.ClockTime = 0
     Lighting.ExposureCompensation = -0.5
     Lighting.FogEnd = 9e9
-    
     local function Optimize(obj)
         if obj:IsA("BasePart") or obj:IsA("MeshPart") then
             obj.Material = Enum.Material.SmoothPlastic
@@ -36,7 +36,7 @@ local function ApplyFFlags()
     for _, v in pairs(workspace:GetDescendants()) do Optimize(v) end
 end
 
--- DỌN DẸP
+-- CLEANUP
 for _, v in pairs(LP.PlayerGui:GetChildren()) do
     if v.Name:find("Galaxy") then v:Destroy() end
 end
@@ -45,7 +45,7 @@ local G = Instance.new("ScreenGui", LP.PlayerGui)
 G.Name = "Galaxy_"..math.random(1000,9999); G.ResetOnSpawn = false
 local NeonRed = Color3.fromRGB(255, 0, 0)
 
--- BIẾN HỆ THỐNG
+-- SYSTEM VARS
 _G.Active = true
 _G.TargetName = ""; _G.Speed = 16; _G.FlySpeed = 50; _G.Fly = false; 
 _G.AutoBlock = false; _G.Aim = false; _G.ESP = false; _G.Noclip = false
@@ -53,6 +53,7 @@ _G.LoopTP = false; _G.Bring = false
 
 local blockTick = 0
 local BV = nil 
+local BG = nil
 
 -- [NO SHAKE]
 local function EnableNoShake()
@@ -113,7 +114,7 @@ end
 CreateTitle(Main, "GALAXY Premium - LeDangKhoi")
 CreateTitle(SubMenu, "PLAYER TOOL")
 
--- [PLAYER TOOL ELEMENTS]
+-- [SUBMENU]
 local NameBox = Instance.new("TextBox", SubMenu); NameBox.Size = UDim2.new(1, -20, 0, 40); NameBox.Position = UDim2.new(0, 10, 0, 50); NameBox.BackgroundColor3 = Color3.fromRGB(30,30,30); NameBox.PlaceholderText = "Tên người chơi..."; NameBox.Text = ""; NameBox.TextColor3 = Color3.new(1,1,1); NameBox.Font = Enum.Font.SourceSansBold; NameBox.TextSize = 14; Instance.new("UIStroke", NameBox).Color = NeonRed
 NameBox.FocusLost:Connect(function() _G.TargetName = NameBox.Text end)
 
@@ -142,10 +143,15 @@ end
 AddMainBtn("SMART AIM", 50, function(v) _G.Aim = v end)
 AddMainBtn("AUTO BLOCK", 105, function(v) _G.AutoBlock = v end)
 
--- FLY MODE & FLY SPEED BOX
 local FlyBtn = AddMainBtn("FLY MODE", 160, function(v) 
     _G.Fly = v
-    if not v and BV then BV:Destroy(); BV = nil end
+    if not v then
+        if BV then BV:Destroy(); BV = nil end
+        if BG then BG:Destroy(); BG = nil end
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+            LP.Character.Humanoid.PlatformStand = false
+        end
+    end
 end)
 FlyBtn.Size = UDim2.new(0, 145, 0, 45)
 
@@ -159,11 +165,12 @@ AddMainBtn("PLAYER TOOL", 270, function(v) SubMenu.Visible = v end)
 
 local WalkSpeedBox = Instance.new("TextBox", Main); WalkSpeedBox.Size = UDim2.new(1, -20, 0, 45); WalkSpeedBox.Position = UDim2.new(0, 10, 0, 325); WalkSpeedBox.BackgroundColor3 = Color3.fromRGB(30,30,30); WalkSpeedBox.Text = "TỐC ĐỘ ĐI (16)"; WalkSpeedBox.TextColor3 = NeonRed; WalkSpeedBox.Font = Enum.Font.SourceSansBold; WalkSpeedBox.FocusLost:Connect(function() _G.Speed = tonumber(WalkSpeedBox.Text) or 16 end)
 
--- HỦY SCRIPT
 local Close = Instance.new("TextButton", Main); Close.Size = UDim2.new(1,-20,0,45); Close.Position = UDim2.new(0,10,0,435); Close.BackgroundColor3 = Color3.new(0.2,0,0); Close.Text = "HỦY SCRIPT"; Close.TextColor3 = Color3.new(1,1,1); Close.Font = Enum.Font.SourceSansBold
 Close.MouseButton1Click:Connect(function() 
     _G.Active = false
     if BV then BV:Destroy() end
+    if BG then BG:Destroy() end
+    if LP.Character and LP.Character:FindFirstChild("Humanoid") then LP.Character.Humanoid.PlatformStand = false end
     local tool = LP.Backpack:FindFirstChild("GALAXY NOCLIP") or (LP.Character and LP.Character:FindFirstChild("GALAXY NOCLIP"))
     if tool then tool:Destroy() end
     G:Destroy()
@@ -178,26 +185,36 @@ RS.Heartbeat:Connect(function()
         local char = LP.Character; local hrp = char.HumanoidRootPart; local hum = char.Humanoid
         hum.WalkSpeed = _G.Speed
         
-        -- Fly Mode 3D (Joystick + Camera Angle)
+        -- Fly Mode IY Style (3D Movement + Stabilization)
         if _G.Fly then
+            hum.PlatformStand = true
             if not BV then
                 BV = Instance.new("BodyVelocity", hrp); BV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
             end
+            if not BG then
+                BG = Instance.new("BodyGyro", hrp); BG.MaxTorque = Vector3.new(math.huge, math.huge, math.huge); BG.P = 15000
+            end
+            
+            -- Giữ nhân vật nhìn theo hướng Camera nhưng luôn đứng thẳng (Y = 0)
+            BG.CFrame = Camera.CFrame
             
             if hum.MoveDirection.Magnitude > 0 then
-                -- Tính toán Vector di chuyển dựa trên Camera để có thể bay lên/xuống
-                local camCFrame = Camera.CFrame
-                local moveDir = hum.MoveDirection
-                
-                -- Kết hợp: Hướng di chuyển ngang của Joystick * Hướng nhìn dọc của Camera
-                local direction = (camCFrame.LookVector * moveDir.Z) + (camCFrame.RightVector * moveDir.X)
-                BV.Velocity = direction.Unit * _G.FlySpeed
+                -- Bay 3D theo Camera & Joystick
+                local direction = Camera.CFrame:VectorToWorldSpace(Vector3.new(hum.MoveDirection.X, 0, -hum.MoveDirection.Z))
+                if hum.MoveDirection.Z > 0 then -- Lùi
+                     direction = Camera.CFrame:VectorToWorldSpace(Vector3.new(hum.MoveDirection.X, 0, hum.MoveDirection.Z))
+                end
+                BV.Velocity = Camera.CFrame.LookVector * (hum.MoveDirection.Z * -_G.FlySpeed) + Camera.CFrame.RightVector * (hum.MoveDirection.X * _G.FlySpeed)
             else
                 BV.Velocity = Vector3.new(0, 0, 0)
             end
-        elseif BV then BV:Destroy(); BV = nil end
+        elseif BV or BG then
+            if BV then BV:Destroy(); BV = nil end
+            if BG then BG:Destroy(); BG = nil end
+            hum.PlatformStand = false
+        end
 
-        -- Noclip & ESP & Aim (Giữ nguyên logic v5.4)
+        -- NOCLIP / ESP / AIM Logic
         if _G.Noclip then
             for _, part in pairs(char:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = false end end
         end
@@ -230,7 +247,7 @@ RS.Heartbeat:Connect(function()
                 end
             end
         end
-        if _G.Aim and targetHRP then hrp.CFrame = CFrame.lookAt(hrp.Position, Vector3.new(targetHRP.Position.X, hrp.Position.Y, targetHRP.Position.Z)) end
+        if _G.Aim and targetHRP and not _G.Fly then hrp.CFrame = CFrame.lookAt(hrp.Position, Vector3.new(targetHRP.Position.X, hrp.Position.Y, targetHRP.Position.Z)) end
         if _G.AutoBlock and tick() - blockTick > 0.4 then VIM:SendKeyEvent(false, Enum.KeyCode.F, false, game) end
     end)
 end)
