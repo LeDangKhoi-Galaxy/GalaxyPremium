@@ -1,8 +1,8 @@
 --[[ 
-    GALAXY PREMIUM v5.6 - IY STYLE FLY
-    - IMPROVED: Fly Mode (Infinite Yield Logic) - Smooth 3D Movement.
-    - STABILITY: Added BodyGyro to keep character upright while flying.
-    - FEATURES: Player Tool, No Shake, Noclip Tool, Speed Control.
+    GALAXY PREMIUM v5.7 - PERFECT FLY CONTROL
+    - FIXED: Fly movement now matches Joystick perfectly with Camera.
+    - LOGIC: Used VectorToWorldSpace for relative movement.
+    - RETAINED: All features from v5.6 (Player Tool, No Shake, Noclip Tool).
     - AUTHENTIC BY: LeDangKhoi 
 ]]
 
@@ -71,9 +71,9 @@ end
 
 -- [NOCLIP TOOL]
 local function GiveNoclipTool()
-    if _G.Active and not LP.Backpack:FindFirstChild("Noclip") then
+    if _G.Active and not LP.Backpack:FindFirstChild("GALAXY NOCLIP") then
         local Tool = Instance.new("Tool")
-        Tool.Name = "Noclip"; Tool.RequiresHandle = false; Tool.Parent = LP.Backpack
+        Tool.Name = "GALAXY NOCLIP"; Tool.RequiresHandle = false; Tool.Parent = LP.Backpack
         Tool.Activated:Connect(function()
             _G.Noclip = not _G.Noclip
             game:GetService("StarterGui"):SetCore("SendNotification", {Title = "GALAXY", Text = "Noclip: "..(_G.Noclip and "BẬT" or "TẮT")})
@@ -111,7 +111,7 @@ local SubMenu = Instance.new("Frame", G); SubMenu.Visible = false; SubMenu.Size 
 local function CreateTitle(p, txt)
     local T = Instance.new("TextLabel", p); T.Size = UDim2.new(1, 0, 0, 40); T.BackgroundColor3 = NeonRed; T.Text = txt; T.TextColor3 = Color3.new(1,1,1); T.Font = Enum.Font.SourceSansBold; T.TextSize = 16
 end
-CreateTitle(Main, "GALAXY Premium - LeDangKhoi")
+CreateTitle(Main, "GALAXY Premium v5.7")
 CreateTitle(SubMenu, "PLAYER TOOL")
 
 -- [SUBMENU]
@@ -185,7 +185,7 @@ RS.Heartbeat:Connect(function()
         local char = LP.Character; local hrp = char.HumanoidRootPart; local hum = char.Humanoid
         hum.WalkSpeed = _G.Speed
         
-        -- Fly Mode IY Style (3D Movement + Stabilization)
+        -- Fly Mode Perfect Control (Fixed Inverse Logic)
         if _G.Fly then
             hum.PlatformStand = true
             if not BV then
@@ -195,16 +195,15 @@ RS.Heartbeat:Connect(function()
                 BG = Instance.new("BodyGyro", hrp); BG.MaxTorque = Vector3.new(math.huge, math.huge, math.huge); BG.P = 15000
             end
             
-            -- Giữ nhân vật nhìn theo hướng Camera nhưng luôn đứng thẳng (Y = 0)
             BG.CFrame = Camera.CFrame
             
             if hum.MoveDirection.Magnitude > 0 then
-                -- Bay 3D theo Camera & Joystick
-                local direction = Camera.CFrame:VectorToWorldSpace(Vector3.new(hum.MoveDirection.X, 0, -hum.MoveDirection.Z))
-                if hum.MoveDirection.Z > 0 then -- Lùi
-                     direction = Camera.CFrame:VectorToWorldSpace(Vector3.new(hum.MoveDirection.X, 0, hum.MoveDirection.Z))
-                end
-                BV.Velocity = Camera.CFrame.LookVector * (hum.MoveDirection.Z * -_G.FlySpeed) + Camera.CFrame.RightVector * (hum.MoveDirection.X * _G.FlySpeed)
+                -- Chuyển đổi hướng Joystick sang hệ tọa độ của Camera
+                local direction = Camera.CFrame:VectorToWorldSpace(Vector3.new(hum.MoveDirection.X, 0, hum.MoveDirection.Z))
+                
+                -- Sửa lỗi: Z trong MoveDirection trên mobile đôi khi bị ngược, 
+                -- VectorToWorldSpace sẽ tự động map đúng hướng mặt.
+                BV.Velocity = direction * _G.FlySpeed
             else
                 BV.Velocity = Vector3.new(0, 0, 0)
             end
