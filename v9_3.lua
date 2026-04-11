@@ -1,9 +1,10 @@
 --[[ 
-   GALAXY PREMIUM v5.5.5 - FINAL STABLE
+   GALAXY PREMIUM v5.5.5 - FINAL STABLE (MODDED ESP)
    - INTRO: Full V4.4 Restored with Animations.
    - VOID: TP To Void & Void Plate Restored.
    - PLAYER TOOL: Fixed UI Layout & Functions.
    - NOCLIP: Permanent Backpack Tool (No Shake).
+   - ESP: Display Username, HP, and Distance.
    - AUTHENTIC BY: LeDangKhoi & Gemini
 ]]
 
@@ -147,19 +148,25 @@ RS.Heartbeat:Connect(function()
             local targetHRP = nil; local closestDist = 1000
 
             for _, v in pairs(Players:GetPlayers()) do
-                if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character:FindFirstChild("Head") then
+                if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character:FindFirstChild("Head") and v.Character:FindFirstChild("Humanoid") then
                     local hrp = v.Character.HumanoidRootPart
                     local dist = (myHRP.Position - hrp.Position).Magnitude
+                    
+                    -- [HỆ THỐNG ESP CẬP NHẬT]
                     if _G.ESP then
                         local tag = v.Character.Head:FindFirstChild("G_Tag")
                         if not tag then
                             tag = Instance.new("BillboardGui", v.Character.Head); tag.Name = "G_Tag"; tag.Size = UDim2.new(0, 200, 0, 100); tag.AlwaysOnTop = true; tag.StudsOffset = Vector3.new(0, 3, 0)
-                            local l = Instance.new("TextLabel", tag); l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = NeonRed; l.Font = Enum.Font.SourceSansBold; l.TextSize = 14
+                            local l = Instance.new("TextLabel", tag); l.Name = "TextLabel"; l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = NeonRed; l.Font = Enum.Font.SourceSansBold; l.TextSize = 14; l.TextStrokeTransparency = 0
                         end
-                        tag.TextLabel.Text = v.DisplayName.."\n["..math.floor(v.Character.Humanoid.Health).." HP]"
+                        -- Hiển thị: Tên | Máu | Khoảng cách
+                        local health = math.floor(v.Character.Humanoid.Health)
+                        local distance = math.floor(dist)
+                        tag.TextLabel.Text = string.format("%s\nHP: %d | Dist: %dm", v.Name, health, distance)
                     else
                         if v.Character.Head:FindFirstChild("G_Tag") then v.Character.Head.G_Tag:Destroy() end
                     end
+
                     if _G.Aim and dist < closestDist then closestDist = dist; targetHRP = hrp end
                     if _G.AutoBlock and dist < 25 then
                         local anim = v.Character.Humanoid:FindFirstChildOfClass("Animator")
