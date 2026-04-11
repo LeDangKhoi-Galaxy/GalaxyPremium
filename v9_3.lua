@@ -1,9 +1,8 @@
 --[[ 
-   GALAXY PREMIUM v6.3 - THE ULTIMATE OPTIMIZED
-   - ADDED: FFlag Dark Potato Style (Tối ưu đồ họa, giảm lag).
-   - FIXED: Anti-Shake (Chống rung màn hình khi combo).
-   - FEATURES: Auto Noclip, Aimbot, Auto Block, ESP, Player Tool.
-   - UI: Compact Style (Gọn gàng, không che màn hình).
+   GALAXY PREMIUM v6.4 - UI SYNC ENHANCED
+   - UPDATE: Đồng bộ đóng PLAYER TOOL khi tắt Menu chính bằng nút GALAXY.
+   - BRANDING: Legacy Intro v5.4.1 + FFlag Dark Potato Style.
+   - FEATURES: Anti-Shake, Auto Noclip, Aimbot, Auto Block, ESP.
    - AUTHENTIC BY: LeDangKhoi & Gemini
 ]]
 
@@ -24,7 +23,7 @@ local G = Instance.new("ScreenGui", LP.PlayerGui)
 G.Name = "Galaxy_"..math.random(1000,9999); G.ResetOnSpawn = false
 local NeonRed = Color3.fromRGB(255, 0, 0)
 
--- [FFLAG DARK POTATO STYLE - TỐI ƯU HÓA]
+-- [FFLAG DARK POTATO STYLE]
 local function ApplyFFlags()
     settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
     Lighting.GlobalShadows = false
@@ -39,9 +38,7 @@ local function ApplyFFlags()
             obj.CastShadow = false
         end
         if obj:IsA("Decal") or obj:IsA("Texture") then obj:Destroy() end
-        if obj:IsA("ParticleEmitter") or obj:IsA("Trail") then
-            obj.Enabled = false
-        end
+        if obj:IsA("ParticleEmitter") or obj:IsA("Trail") then obj.Enabled = false end
     end
     for _, v in pairs(workspace:GetDescendants()) do Optimize(v) end
     workspace.DescendantAdded:Connect(Optimize)
@@ -55,7 +52,7 @@ local blockTick = 0
 local LastPosBeforeVoid = nil 
 local CurrentVoidPlate = nil 
 
--- [ANTI SHAKE & NOCLIP ENGINE]
+-- [CORE ENGINE: NOCLIP & ANTI-SHAKE]
 local function GiveNoclipTool()
     if not _G.Active then return end
     if LP.Backpack:FindFirstChild("Noclip") or (LP.Character and LP.Character:FindFirstChild("Noclip (Galaxy)")) then return end
@@ -64,14 +61,12 @@ end
 
 RS.Stepped:Connect(function()
     if _G.Active and LP.Character then
-        -- Noclip
-        local tool = LP.Character:FindFirstChild("Noclip (Galaxy)")
+        local tool = LP.Character:FindFirstChild("Noclip")
         if tool then
             for _, part in pairs(LP.Character:GetDescendants()) do
                 if part:IsA("BasePart") then part.CanCollide = false end
             end
         end
-        -- Anti Shake
         Camera.FieldOfView = 80
         for _, v in pairs(Camera:GetChildren()) do
             if v.Name:lower():find("shake") or v:IsA("CameraShake") then v:Destroy() end
@@ -96,7 +91,7 @@ local function StartIntro()
     task.wait(0.6); Overlay:Destroy()
 end
 
--- [UI: MAIN MENU - COMPACT]
+-- [UI: MAIN MENU]
 local Main = Instance.new("Frame", G); Main.Visible = false; Main.Size = UDim2.new(0, 180, 0, 450); Main.Position = UDim2.new(0.5, -200, 0.3, 0); Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Main.Active = true; Main.Draggable = true; Instance.new("UIStroke", Main).Color = NeonRed
 local SubMenu = Instance.new("Frame", G); SubMenu.Visible = false; SubMenu.Size = UDim2.new(0, 170, 0, 240); SubMenu.Position = UDim2.new(0.5, 0, 0.3, 0); SubMenu.BackgroundColor3 = Color3.fromRGB(15, 15, 15); SubMenu.Active = true; SubMenu.Draggable = true; Instance.new("UIStroke", SubMenu).Color = NeonRed
 
@@ -115,7 +110,7 @@ AddMainBtn("SMART AIM", 45, function(v) _G.Aim = v end)
 AddMainBtn("AUTO BLOCK", 88, function(v) _G.AutoBlock = v end)
 AddMainBtn("FLY MODE", 131, function(v) _G.Fly = v end)
 AddMainBtn("PLAYER ESP", 174, function(v) _G.ESP = v end)
-AddMainBtn("PLAYER TOOL", 217, function(v) SubMenu.Visible = v end)
+AddMainBtn("PLAYER TOOL", 217, function(v) SubMenu.Visible = v end) -- Logic: Nút OFF sẽ tắt SubMenu
 AddMainBtn("TP TO VOID", 260, function(v)
     _G.VoidActive = v
     if v and LP.Character then
@@ -128,7 +123,7 @@ AddMainBtn("TP TO VOID", 260, function(v)
     elseif not v and LP.Character then LP.Character.HumanoidRootPart.CFrame = LastPosBeforeVoid or CFrame.new(0, 50, 0) end
 end)
 
-local Inp = Instance.new("TextBox", Main); Inp.Size = UDim2.new(1, -16, 0, 38); Inp.Position = UDim2.new(0, 8, 0, 310); Inp.BackgroundColor3 = Color3.fromRGB(30,30,30); Inp.Text = "16"; Inp.PlaceholderText = "NHẬP TỐC ĐỘ"; Inp.TextColor3 = NeonRed; Inp.Font = Enum.Font.SourceSansBold; Inp.TextSize = 18; Instance.new("UIStroke", Inp).Color = NeonRed
+local Inp = Instance.new("TextBox", Main); Inp.Size = UDim2.new(1, -16, 0, 38); Inp.Position = UDim2.new(0, 8, 0, 310); Inp.BackgroundColor3 = Color3.fromRGB(30,30,30); Inp.Text = "16"; Inp.PlaceholderText = "SPEED"; Inp.TextColor3 = NeonRed; Inp.Font = Enum.Font.SourceSansBold; Inp.TextSize = 18; Instance.new("UIStroke", Inp).Color = NeonRed
 Inp.FocusLost:Connect(function() _G.Speed = tonumber(Inp.Text) or 16 end)
 
 local Close = Instance.new("TextButton", Main); Close.Size = UDim2.new(1,-16,0,35); Close.Position = UDim2.new(0,8,0,405); Close.BackgroundColor3 = Color3.new(0.2,0,0); Close.Text = "HỦY SCRIPT"; Close.TextColor3 = Color3.new(1,1,1); Close.Font = Enum.Font.SourceSansBold; Close.TextSize = 14
@@ -140,7 +135,7 @@ Close.MouseButton1Click:Connect(function()
     G:Destroy()
 end)
 
--- [PLAYER TOOL SUBMENU]
+-- [PLAYER TOOL SUBMENU CONTENT]
 local NameBox = Instance.new("TextBox", SubMenu); NameBox.Size = UDim2.new(1, -16, 0, 35); NameBox.Position = UDim2.new(0, 8, 0, 45); NameBox.BackgroundColor3 = Color3.fromRGB(30,30,30); NameBox.PlaceholderText = "Player Name..."; NameBox.Text = ""; NameBox.TextColor3 = Color3.new(1,1,1); NameBox.Font = Enum.Font.SourceSansBold; NameBox.TextSize = 14; Instance.new("UIStroke", NameBox).Color = NeonRed
 NameBox.FocusLost:Connect(function() _G.TargetName = NameBox.Text end)
 
@@ -154,14 +149,28 @@ local function AddSubBtn(n, y, c)
     local b = Instance.new("TextButton", SubMenu); b.Size = UDim2.new(1, -16, 0, 35); b.Position = UDim2.new(0, 8, 0, y); b.BackgroundColor3 = Color3.fromRGB(30,30,30); b.Text = n..": OFF"; b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.SourceSansBold; b.TextSize = 12
     local s = false; b.MouseButton1Click:Connect(function() s = not s; b.Text = n..(s and ": ON" or ": OFF"); b.TextColor3 = s and NeonRed or Color3.new(1,1,1); c(s) end)
 end
-AddSubBtn("LOOP TELEPORT", 90, function(v) _G.LoopTP = v; task.spawn(function() while _G.LoopTP and _G.Active do task.wait(); local t = GetPlayerSmart(_G.TargetName); if t and t.Character and LP.Character then LP.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3) end end end) end)
+AddSubBtn("LOOP TP", 90, function(v) _G.LoopTP = v; task.spawn(function() while _G.LoopTP and _G.Active do task.wait(); local t = GetPlayerSmart(_G.TargetName); if t and t.Character and LP.Character then LP.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3) end end end) end)
 AddSubBtn("BRING PLAYER", 135, function(v) _G.Bring = v; task.spawn(function() while _G.Bring and _G.Active do task.wait(); local t = GetPlayerSmart(_G.TargetName); if t and t.Character and LP.Character then t.Character.HumanoidRootPart.CFrame = LP.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3) end end end) end)
 
--- [UI: TOGGLE BUTTON (GALAXY)]
+-- [UI: TOGGLE BUTTON (GALAXY) SYNC LOGIC]
 local ToggleBtn = Instance.new("TextButton", G); ToggleBtn.Visible = false; ToggleBtn.Size = UDim2.new(0, 70, 0, 30); ToggleBtn.Position = UDim2.new(0, 5, 0.5, 0); ToggleBtn.BackgroundColor3 = Color3.new(0,0,0); ToggleBtn.Text = "GALAXY"; ToggleBtn.TextColor3 = NeonRed; ToggleBtn.Font = Enum.Font.SourceSansBold; ToggleBtn.TextSize = 14; Instance.new("UIStroke", ToggleBtn).Color = NeonRed
-ToggleBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible; if not Main.Visible then SubMenu.Visible = false end end)
 
--- [CORE LOOP]
+ToggleBtn.MouseButton1Click:Connect(function() 
+    Main.Visible = not Main.Visible
+    -- TỰ ĐỘNG TẮT SUBMENU KHI ĐÓNG MENU CHÍNH
+    if not Main.Visible then 
+        SubMenu.Visible = false 
+    else
+        -- Nếu mở lại Menu chính, kiểm tra xem PLAYER TOOL có đang ON không để hiện SubMenu
+        for _, btn in pairs(Main:GetChildren()) do
+            if btn:IsA("TextButton") and btn.Text:find("PLAYER TOOL: ON") then
+                SubMenu.Visible = true
+            end
+        end
+    end
+end)
+
+-- [CORE HEARTBEAT LOOP]
 RS.Heartbeat:Connect(function()
     if not _G.Active then return end
     pcall(function()
@@ -201,7 +210,7 @@ end)
 -- [EXECUTION]
 task.spawn(function()
     StartIntro()
-    ApplyFFlags() -- Kích hoạt tối ưu đồ họa
+    ApplyFFlags()
     Main.Visible = true
     ToggleBtn.Visible = true
     GiveNoclipTool()
