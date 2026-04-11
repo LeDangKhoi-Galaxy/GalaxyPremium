@@ -1,7 +1,9 @@
 --[[ 
-   GALAXY PREMIUM v4.9 - AIM LOCK FIXED
-   - FIXED: Aim Character now tracks targets perfectly.
-   - RETAINED: Intro v4.4, Dark Potato Style, Fixed Player Tool.
+   GALAXY PREMIUM v5.4 - FULL CLEANUP SYSTEM
+   - CLEANUP: "HỦY SCRIPT" giờ đây xóa sạch ESP, Speed, Fly, Aim và thu hồi Tool.
+   - ESP: Username, HP, Distance (Classic Style).
+   - TOOL: "Noclip" auto-added, clean removal on exit.
+   - RETAIN: Void plate stays after cleanup if active.
    - AUTHENTIC BY: LeDangKhoi
 ]]
 
@@ -40,7 +42,7 @@ local function ApplyFFlags()
     workspace.DescendantAdded:Connect(Optimize)
 end
 
--- DỌN DẸP UI
+-- DỌN DẸP UI CŨ
 for _, v in pairs(LP.PlayerGui:GetChildren()) do
     if v.Name:find("Galaxy") then v:Destroy() end
 end
@@ -56,6 +58,20 @@ _G.LoopTP = false; _G.Bring = false; _G.VoidActive = false
 local blockTick = 0
 local LastPosBeforeVoid = nil 
 local CurrentVoidPlate = nil 
+
+-- [NOCLIP TOOL SYSTEM]
+local NoclipTool = Instance.new("Tool")
+NoclipTool.Name = "Noclip"
+NoclipTool.RequiresHandle = false
+
+local function HandleNoclip()
+    if not _G.Active then return end
+    if NoclipTool.Parent == LP.Character then
+        for _, part in pairs(LP.Character:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = false end
+        end
+    end
+end
 
 -- [INTRO V4.4]
 local function StartIntro()
@@ -74,10 +90,12 @@ local function StartIntro()
     TS:Create(BoxStroke, TweenInfo.new(0.5), {Transparency = 1}):Play()
     TS:Create(IntroText, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
     task.wait(0.6); Overlay:Destroy()
+    
     ApplyFFlags()
+    NoclipTool.Parent = LP.Backpack
 end
 
--- [MAIN MENU & SUBMENU]
+-- [MAIN MENU]
 local Main = Instance.new("Frame", G); Main.Visible = false; Main.Size = UDim2.new(0, 220, 0, 520); Main.Position = UDim2.new(0.5, -230, 0.3, 0); Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Main.Active = true; Main.Draggable = true; Instance.new("UIStroke", Main).Color = NeonRed
 local SubMenu = Instance.new("Frame", G); SubMenu.Visible = false; SubMenu.Size = UDim2.new(0, 200, 0, 260); SubMenu.Position = UDim2.new(0.5, 10, 0.3, 0); SubMenu.BackgroundColor3 = Color3.fromRGB(15, 15, 15); SubMenu.Active = true; SubMenu.Draggable = true; Instance.new("UIStroke", SubMenu).Color = NeonRed
 
@@ -87,14 +105,18 @@ end
 CreateTitle(Main, "GALAXY Premium - LeDangKhoi")
 CreateTitle(SubMenu, "PLAYER TOOL")
 
--- [SUBMENU ELEMENTS]
-local NameBox = Instance.new("TextBox", SubMenu); NameBox.Size = UDim2.new(1, -20, 0, 40); NameBox.Position = UDim2.new(0, 10, 0, 50); NameBox.BackgroundColor3 = Color3.fromRGB(30,30,30); NameBox.PlaceholderText = "Tên người chơi..."; NameBox.Text = ""; NameBox.TextColor3 = Color3.new(1,1,1); NameBox.Font = Enum.Font.SourceSansBold; NameBox.TextSize = 14; Instance.new("UIStroke", NameBox).Color = NeonRed
-NameBox.FocusLost:Connect(function() _G.TargetName = NameBox.Text end)
-
 local function AddSubBtn(n, y, c)
     local b = Instance.new("TextButton", SubMenu); b.Size = UDim2.new(1, -20, 0, 45); b.Position = UDim2.new(0, 10, 0, y); b.BackgroundColor3 = Color3.fromRGB(30,30,30); b.Text = n..": OFF"; b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.SourceSansBold; b.TextSize = 14
     local s = false; b.MouseButton1Click:Connect(function() s = not s; b.Text = n..(s and ": ON" or ": OFF"); b.TextColor3 = s and NeonRed or Color3.new(1,1,1); c(s) end)
 end
+
+local function AddMainBtn(n, y, c)
+    local b = Instance.new("TextButton", Main); b.Size = UDim2.new(1, -20, 0, 45); b.Position = UDim2.new(0, 10, 0, y); b.BackgroundColor3 = Color3.fromRGB(30,30,30); b.Text = n..": OFF"; b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.SourceSansBold; b.TextSize = 18
+    local s = false; b.MouseButton1Click:Connect(function() s = not s; b.Text = n..(s and ": ON" or ": OFF"); b.TextColor3 = s and NeonRed or Color3.new(1,1,1); c(s) end)
+end
+
+local NameBox = Instance.new("TextBox", SubMenu); NameBox.Size = UDim2.new(1, -20, 0, 40); NameBox.Position = UDim2.new(0, 10, 0, 50); NameBox.BackgroundColor3 = Color3.fromRGB(30,30,30); NameBox.PlaceholderText = "Tên người chơi..."; NameBox.Text = ""; NameBox.TextColor3 = Color3.new(1,1,1); NameBox.Font = Enum.Font.SourceSansBold; NameBox.TextSize = 14; Instance.new("UIStroke", NameBox).Color = NeonRed
+NameBox.FocusLost:Connect(function() _G.TargetName = NameBox.Text end)
 
 local function GetPlayerSmart(name)
     if name == "" then return nil end
@@ -105,12 +127,6 @@ end
 
 AddSubBtn("LOOP TELEPORT", 105, function(v) _G.LoopTP = v; task.spawn(function() while _G.LoopTP and _G.Active do task.wait(); local t = GetPlayerSmart(_G.TargetName); if t and t.Character and LP.Character then LP.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3) end end end) end)
 AddSubBtn("BRING PLAYER", 160, function(v) _G.Bring = v; task.spawn(function() while _G.Bring and _G.Active do task.wait(); local t = GetPlayerSmart(_G.TargetName); if t and t.Character and LP.Character then t.Character.HumanoidRootPart.CFrame = LP.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3) end end end) end)
-
--- [MAIN BUTTONS]
-local function AddMainBtn(n, y, c)
-    local b = Instance.new("TextButton", Main); b.Size = UDim2.new(1, -20, 0, 45); b.Position = UDim2.new(0, 10, 0, y); b.BackgroundColor3 = Color3.fromRGB(30,30,30); b.Text = n..": OFF"; b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.SourceSansBold; b.TextSize = 18
-    local s = false; b.MouseButton1Click:Connect(function() s = not s; b.Text = n..(s and ": ON" or ": OFF"); b.TextColor3 = s and NeonRed or Color3.new(1,1,1); c(s) end)
-end
 
 AddMainBtn("SMART AIM", 50, function(v) _G.Aim = v end)
 AddMainBtn("AUTO BLOCK", 105, function(v) _G.AutoBlock = v end)
@@ -132,22 +148,44 @@ end)
 
 local Inp = Instance.new("TextBox", Main); Inp.Size = UDim2.new(1, -20, 0, 45); Inp.Position = UDim2.new(0, 10, 0, 380); Inp.BackgroundColor3 = Color3.fromRGB(30,30,30); Inp.Text = "TỐC ĐỘ (16)"; Inp.TextColor3 = NeonRed; Inp.Font = Enum.Font.SourceSansBold; Inp.TextSize = 18; Inp.FocusLost:Connect(function() _G.Speed = tonumber(Inp.Text) or 16 end)
 
+-- [HỆ THỐNG HỦY SCRIPT]
 local Close = Instance.new("TextButton", Main); Close.Size = UDim2.new(1,-20,0,40); Close.Position = UDim2.new(0,10,0,435); Close.BackgroundColor3 = Color3.new(0.2,0,0); Close.Text = "HỦY SCRIPT"; Close.TextColor3 = Color3.new(1,1,1); Close.Font = Enum.Font.SourceSansBold
-Close.MouseButton1Click:Connect(function() _G.Active = false; G:Destroy() end)
+Close.MouseButton1Click:Connect(function()
+    _G.Active = false
+    -- 1. Reset nhân vật
+    if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+        LP.Character.Humanoid.WalkSpeed = 16
+        for _, part in pairs(LP.Character:GetDescendants()) do
+            if part:IsA("BasePart") then part.CanCollide = true end
+        end
+    end
+    -- 2. Xóa Tool Noclip
+    if NoclipTool then NoclipTool:Destroy() end
+    -- 3. Xóa sạch ESP đang hiển thị
+    for _, p in pairs(Players:GetPlayers()) do
+        if p.Character and p.Character:FindFirstChild("Head") then
+            local tag = p.Character.Head:FindFirstChild("G_Tag")
+            if tag then tag:Destroy() end
+        end
+    end
+    -- 4. Xóa UI
+    G:Destroy()
+end)
 
 local ToggleBtn = Instance.new("TextButton", G); ToggleBtn.Visible = false; ToggleBtn.Size = UDim2.new(0, 85, 0, 35); ToggleBtn.Position = UDim2.new(0, 10, 0.5, 0); ToggleBtn.BackgroundColor3 = Color3.new(0,0,0); ToggleBtn.Text = "GALAXY"; ToggleBtn.TextColor3 = NeonRed; ToggleBtn.Font = Enum.Font.SourceSansBold; ToggleBtn.TextSize = 12; Instance.new("UIStroke", ToggleBtn).Color = NeonRed
 ToggleBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
 
--- [HEARTBEAT CORE - AIM FIXED]
+-- [HEARTBEAT CORE]
 RS.Heartbeat:Connect(function()
     if not _G.Active then return end
     pcall(function()
         LP.Character.Humanoid.WalkSpeed = _G.Speed
         if _G.Fly then LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 50, 0) end
-        
+        HandleNoclip()
+
         local myHRP = LP.Character.HumanoidRootPart
         local targetHRP = nil
-        local closestDist = 1000 -- Khoảng cách Aim tối đa
+        local closestDist = 1000
 
         for _, v in pairs(Players:GetPlayers()) do
             if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
@@ -155,25 +193,22 @@ RS.Heartbeat:Connect(function()
                 local hum = v.Character:FindFirstChild("Humanoid")
                 local hrp = v.Character.HumanoidRootPart
                 
-                -- ESP
+                -- [ESP]
                 if _G.ESP and head then
                     local tag = head:FindFirstChild("G_Tag")
                     if not tag then
                         tag = Instance.new("BillboardGui", head); tag.Name = "G_Tag"; tag.Size = UDim2.new(0, 200, 0, 100); tag.AlwaysOnTop = true; tag.StudsOffset = Vector3.new(0, 3, 0)
-                        local l = Instance.new("TextLabel", tag); l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = NeonRed; l.Font = Enum.Font.SourceSansBold; l.TextSize = 18
+                        local l = Instance.new("TextLabel", tag); l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = NeonRed; l.Font = Enum.Font.SourceSansBold; l.TextSize = 16
                     end
-                    tag.TextLabel.Text = v.DisplayName.."\nHP: "..math.floor(hum.Health).."\n"..math.floor((myHRP.Position - hrp.Position).Magnitude).."m"
+                    tag.TextLabel.Text = v.Name.."\nHP: "..math.floor(hum.Health).."\n"..math.floor((myHRP.Position - hrp.Position).Magnitude).."m"
                 elseif not _G.ESP and head and head:FindFirstChild("G_Tag") then
                     head.G_Tag:Destroy()
                 end
 
-                -- AIM CALCULATION (Cải tiến)
+                -- AIM
                 if _G.Aim and hum.Health > 0 then
                     local dist = (myHRP.Position - hrp.Position).Magnitude
-                    if dist < closestDist then
-                        closestDist = dist
-                        targetHRP = hrp
-                    end
+                    if dist < closestDist then closestDist = dist; targetHRP = hrp end
                 end
 
                 -- AUTO BLOCK
@@ -184,10 +219,9 @@ RS.Heartbeat:Connect(function()
             end
         end
 
-        -- EXECUTE AIM (Xoay nhân vật mượt mà về phía đối thủ)
         if _G.Aim and targetHRP then
             local lookPos = Vector3.new(targetHRP.Position.X, myHRP.Position.Y, targetHRP.Position.Z)
-            myHRP.CFrame = CFrame.lookAt(myHRP.Position, lookPos)
+            myHRP.CFrame = CFrame.new(myHRP.Position, lookPos)
         end
 
         if _G.AutoBlock and tick() - blockTick > 0.4 then VIM:SendKeyEvent(false, Enum.KeyCode.F, false, game) end
