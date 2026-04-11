@@ -1,7 +1,7 @@
 --[[ 
-    GALAXY PREMIUM v5.3 - PLAYER TOOL RESTORED
+    GALAXY PREMIUM v5.4 - JOYSTICK FLY UPDATE
+    - UPDATED: Fly Mode follows Movement Direction (Joystick).
     - RESTORED: Player Tool (Loop TP & Bring Player).
-    - UPDATED: Free Fly (Camera Direction) + Fly Speed Box.
     - CLEAN EXIT: "HỦY SCRIPT" removes UI, Tools & BV.
     - AUTO-ACTIVATE: No Camera Shake after Intro.
     - AUTHENTIC BY: LeDangKhoi 
@@ -180,12 +180,18 @@ RS.Heartbeat:Connect(function()
         local char = LP.Character; local hrp = char.HumanoidRootPart; local hum = char.Humanoid
         hum.WalkSpeed = _G.Speed
         
-        -- Fly Mode Tự Do theo Camera
+        -- Fly Mode theo Joystick (MoveDirection)
         if _G.Fly then
             if not BV then
                 BV = Instance.new("BodyVelocity", hrp); BV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
             end
-            BV.Velocity = Camera.CFrame.LookVector * _G.FlySpeed
+            
+            -- Nếu có di chuyển (Joystick đẩy), bay theo hướng đó. Nếu không, đứng yên (lơ lửng).
+            if hum.MoveDirection.Magnitude > 0 then
+                BV.Velocity = hum.MoveDirection * _G.FlySpeed
+            else
+                BV.Velocity = Vector3.new(0, 0, 0)
+            end
         elseif BV then BV:Destroy(); BV = nil end
 
         -- Noclip
