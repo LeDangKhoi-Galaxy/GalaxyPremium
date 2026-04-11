@@ -1,7 +1,8 @@
 --[[ 
-   GALAXY PREMIUM v5.4.1 - CUSTOMIZED
-   - ADDED: Anti-Shake (The Strongest Battlegrounds)
-   - MODIFIED: Auto-Give Noclip Tool on Spawn (Removed Toggle)
+   GALAXY PREMIUM v5.5.1 - TSB ULTIMATE
+   - INTRO: Restored V4.4
+   - NOCLIP: Auto-add to Backpack & Permanent Fix.
+   - OPTIMIZE: No Camera Shake for The Strongest Battlegrounds.
    - AUTHENTIC BY: LeDangKhoi & Gemini
 ]]
 
@@ -11,56 +12,25 @@ local RS = game:GetService("RunService")
 local VIM = game:GetService("VirtualInputManager")
 local TS = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
-local Camera = workspace.CurrentCamera
 
--- [FFLAG & ANTI-SHAKE SYSTEM]
-local function ApplyFFlags()
-    -- Anti-Shake Core
-    Camera:GetPropertyChangedSignal("FieldOfView"):Connect(function()
-        Camera.FieldOfView = 70 -- Giữ FOV cố định để chống rung/giật do skill
-    end)
-    
-    settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-    Lighting.GlobalShadows = false
-    Lighting.Brightness = 0.5 
-    Lighting.OutdoorAmbient = Color3.fromRGB(100, 100, 100)
-    Lighting.ClockTime = 0 
-    Lighting.ExposureCompensation = -0.5
-    Lighting.FogEnd = 9e9
-    
-    local function Optimize(obj)
-        if obj:IsA("BasePart") or obj:IsA("MeshPart") then
-            obj.Material = Enum.Material.SmoothPlastic
-            obj.CastShadow = false
-        end
-        if obj:IsA("Decal") or obj:IsA("Texture") then obj:Destroy() end
-        if obj:IsA("ParticleEmitter") or obj:IsA("Trail") or obj:IsA("Explosion") then
-            obj.Enabled = false
-        end
-    end
-    for _, v in pairs(workspace:GetDescendants()) do Optimize(v) end
-    workspace.DescendantAdded:Connect(Optimize)
-end
-
--- DỌN DẸP UI CŨ
-for _, v in pairs(LP.PlayerGui:GetChildren()) do
-    if v.Name:find("Galaxy") then v:Destroy() end
-end
-
-local G = Instance.new("ScreenGui", LP.PlayerGui)
-G.Name = "Galaxy_"..math.random(1000,9999); G.ResetOnSpawn = false
-local NeonRed = Color3.fromRGB(255, 0, 0)
-
--- BIẾN HỆ THỐNG
+-- [BIẾN HỆ THỐNG]
 _G.Active = true
 _G.TargetName = ""; _G.Speed = 16; _G.Fly = false; _G.AutoBlock = false; _G.Aim = false; _G.ESP = false
 _G.LoopTP = false; _G.Bring = false; _G.VoidActive = false
 local blockTick = 0
 local LastPosBeforeVoid = nil 
 local CurrentVoidPlate = nil 
+local NeonRed = Color3.fromRGB(255, 0, 0)
 
--- [NOCLIP TOOL SYSTEM - AUTO GIVE]
-local function CreateNoclipTool()
+-- [DỌN DẸP UI CŨ]
+for _, v in pairs(LP.PlayerGui:GetChildren()) do if v.Name:find("Galaxy") then v:Destroy() end end
+
+local G = Instance.new("ScreenGui", LP.PlayerGui)
+G.Name = "Galaxy_"..math.random(1000,9999); G.ResetOnSpawn = false
+
+-- [HỆ THỐNG NOCLIP VĨNH VIỄN]
+local function GiveNoclipTool()
+    if not _G.Active then return end
     local tool = Instance.new("Tool")
     tool.Name = "Noclip"
     tool.RequiresHandle = false
@@ -68,46 +38,44 @@ local function CreateNoclipTool()
     return tool
 end
 
-local CurrentNoclipTool = CreateNoclipTool()
+local CurrentNoclip = GiveNoclipTool()
 
--- Cập nhật Noclip liên tục và kiểm tra hồi sinh
-RS.Stepped:Connect(function()
-    if not _G.Active then return end
-    
-    -- Tự động đưa lại Tool nếu bị mất hoặc khi hồi sinh
-    if LP.Backpack and not LP.Backpack:FindFirstChild("Noclip (Galaxy)") and not (LP.Character and LP.Character:FindFirstChild("Noclip (Galaxy)")) then
-        CurrentNoclipTool = CreateNoclipTool()
+LP.CharacterAdded:Connect(function()
+    if _G.Active then
+        task.wait(0.5)
+        CurrentNoclip = GiveNoclipTool()
     end
-
-    -- Thực thi Noclip khi cầm Tool
-    if LP.Character and CurrentNoclipTool.Parent == LP.Character then
-        for _, part in pairs(LP.Character:GetDescendants()) do
-            if part:IsA("BasePart") then part.CanCollide = false end
-        end
-    end
-    
-    -- Khóa FOV (Anti-Shake)
-    if Camera.FieldOfView ~= 70 then Camera.FieldOfView = 70 end
 end)
 
--- [INTRO]
+-- RenderStepped xử lý xuyên tường mượt, không rung camera
+RS.RenderStepped:Connect(function()
+    if _G.Active and LP.Character and CurrentNoclip and CurrentNoclip.Parent == LP.Character then
+        for _, part in pairs(LP.Character:GetDescendants()) do
+            if part:IsA("BasePart") then 
+                part.CanCollide = false 
+            end
+        end
+    end
+end)
+
+-- [INTRO V4.4 - RESTORED]
 local function StartIntro()
     local Overlay = Instance.new("Frame", G); Overlay.Size = UDim2.new(1, 0, 1, 0); Overlay.BackgroundColor3 = Color3.new(0, 0, 0); Overlay.BackgroundTransparency = 1; Overlay.ZIndex = 100
     local IntroBox = Instance.new("Frame", Overlay); IntroBox.Size = UDim2.new(0, 400, 0, 100); IntroBox.Position = UDim2.new(0.5, -200, 0.5, -50); IntroBox.BackgroundColor3 = Color3.fromRGB(10, 10, 10); IntroBox.BackgroundTransparency = 1
     local BoxStroke = Instance.new("UIStroke", IntroBox); BoxStroke.Color = NeonRed; BoxStroke.Thickness = 2; BoxStroke.Transparency = 1
     local IntroText = Instance.new("TextLabel", IntroBox); IntroText.Size = UDim2.new(1, 0, 1, 0); IntroText.BackgroundTransparency = 1; IntroText.Text = "GALAXY Premium By LeDangKhoi"; IntroText.TextColor3 = NeonRed; IntroText.Font = Enum.Font.SourceSansBold; IntroText.TextSize = 25; IntroText.TextTransparency = 1
+    
     TS:Create(Overlay, TweenInfo.new(0.5), {BackgroundTransparency = 0.4}):Play()
     task.wait(0.5)
     TS:Create(IntroBox, TweenInfo.new(0.8), {BackgroundTransparency = 0.2}):Play()
     TS:Create(BoxStroke, TweenInfo.new(0.8), {Transparency = 0}):Play()
     TS:Create(IntroText, TweenInfo.new(0.8), {TextTransparency = 0}):Play()
-    task.wait(1.5)
+    task.wait(2.2)
     TS:Create(Overlay, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
     TS:Create(IntroBox, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
     TS:Create(BoxStroke, TweenInfo.new(0.5), {Transparency = 1}):Play()
     TS:Create(IntroText, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
     task.wait(0.6); Overlay:Destroy()
-    ApplyFFlags()
 end
 
 -- [MAIN MENU]
@@ -117,31 +85,13 @@ local SubMenu = Instance.new("Frame", G); SubMenu.Visible = false; SubMenu.Size 
 local function CreateTitle(p, txt)
     local T = Instance.new("TextLabel", p); T.Size = UDim2.new(1, 0, 0, 40); T.BackgroundColor3 = NeonRed; T.Text = txt; T.TextColor3 = Color3.new(1,1,1); T.Font = Enum.Font.SourceSansBold; T.TextSize = 16
 end
-CreateTitle(Main, "GALAXY Premium - LeDangKhoi")
+CreateTitle(Main, "GALAXY PREMIUM - LeDangKhoi")
 CreateTitle(SubMenu, "PLAYER TOOL")
-
-local function AddSubBtn(n, y, c)
-    local b = Instance.new("TextButton", SubMenu); b.Size = UDim2.new(1, -20, 0, 45); b.Position = UDim2.new(0, 10, 0, y); b.BackgroundColor3 = Color3.fromRGB(30,30,30); b.Text = n..": OFF"; b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.SourceSansBold; b.TextSize = 14
-    local s = false; b.MouseButton1Click:Connect(function() s = not s; b.Text = n..(s and ": ON" or ": OFF"); b.TextColor3 = s and NeonRed or Color3.new(1,1,1); c(s) end)
-end
 
 local function AddMainBtn(n, y, c)
     local b = Instance.new("TextButton", Main); b.Size = UDim2.new(1, -20, 0, 45); b.Position = UDim2.new(0, 10, 0, y); b.BackgroundColor3 = Color3.fromRGB(30,30,30); b.Text = n..": OFF"; b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.SourceSansBold; b.TextSize = 18
     local s = false; b.MouseButton1Click:Connect(function() s = not s; b.Text = n..(s and ": ON" or ": OFF"); b.TextColor3 = s and NeonRed or Color3.new(1,1,1); c(s) end)
 end
-
-local NameBox = Instance.new("TextBox", SubMenu); NameBox.Size = UDim2.new(1, -20, 0, 40); NameBox.Position = UDim2.new(0, 10, 0, 50); NameBox.BackgroundColor3 = Color3.fromRGB(30,30,30); NameBox.PlaceholderText = "Tên người chơi..."; NameBox.Text = ""; NameBox.TextColor3 = Color3.new(1,1,1); NameBox.Font = Enum.Font.SourceSansBold; NameBox.TextSize = 14; Instance.new("UIStroke", NameBox).Color = NeonRed
-NameBox.FocusLost:Connect(function() _G.TargetName = NameBox.Text end)
-
-local function GetPlayerSmart(name)
-    if name == "" then return nil end
-    name = name:lower()
-    for _, v in pairs(Players:GetPlayers()) do if v.Name:lower():sub(1, #name) == name or v.DisplayName:lower():sub(1, #name) == name then return v end end
-    return nil
-end
-
-AddSubBtn("LOOP TELEPORT", 105, function(v) _G.LoopTP = v; task.spawn(function() while _G.LoopTP and _G.Active do task.wait(); local t = GetPlayerSmart(_G.TargetName); if t and t.Character and LP.Character then LP.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3) end end end) end)
-AddSubBtn("BRING PLAYER", 160, function(v) _G.Bring = v; task.spawn(function() while _G.Bring and _G.Active do task.wait(); local t = GetPlayerSmart(_G.TargetName); if t and t.Character and LP.Character then t.Character.HumanoidRootPart.CFrame = LP.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3) end end end) end)
 
 AddMainBtn("SMART AIM", 50, function(v) _G.Aim = v end)
 AddMainBtn("AUTO BLOCK", 105, function(v) _G.AutoBlock = v end)
@@ -149,30 +99,14 @@ AddMainBtn("FLY MODE", 160, function(v) _G.Fly = v end)
 AddMainBtn("PLAYER ESP", 215, function(v) _G.ESP = v end)
 AddMainBtn("PLAYER TOOL", 270, function(v) SubMenu.Visible = v end)
 
-AddMainBtn("TP TO VOID", 325, function(v)
-    _G.VoidActive = v
-    if v and LP.Character then
-        LastPosBeforeVoid = LP.Character.HumanoidRootPart.CFrame
-        if not CurrentVoidPlate then
-            CurrentVoidPlate = Instance.new("Part", workspace); CurrentVoidPlate.Name = "Galaxy_Void"; CurrentVoidPlate.Size = Vector3.new(2048, 1, 2048); CurrentVoidPlate.Anchored = true; CurrentVoidPlate.Transparency = 0.5; CurrentVoidPlate.Color = NeonRed; CurrentVoidPlate.Material = Enum.Material.ForceField
-        end
-        CurrentVoidPlate.Position = Vector3.new(LP.Character.HumanoidRootPart.Position.X, -500, LP.Character.HumanoidRootPart.Position.Z)
-        LP.Character.HumanoidRootPart.CFrame = CFrame.new(CurrentVoidPlate.Position + Vector3.new(0, 5, 0))
-    elseif not v and LP.Character then LP.Character.HumanoidRootPart.CFrame = LastPosBeforeVoid or CFrame.new(0, 50, 0) end
-end)
-
+-- Tốc độ
 local Inp = Instance.new("TextBox", Main); Inp.Size = UDim2.new(1, -20, 0, 45); Inp.Position = UDim2.new(0, 10, 0, 380); Inp.BackgroundColor3 = Color3.fromRGB(30,30,30); Inp.Text = "TỐC ĐỘ (16)"; Inp.TextColor3 = NeonRed; Inp.Font = Enum.Font.SourceSansBold; Inp.TextSize = 18; Inp.FocusLost:Connect(function() _G.Speed = tonumber(Inp.Text) or 16 end)
 
+-- Hủy Script
 local Close = Instance.new("TextButton", Main); Close.Size = UDim2.new(1,-20,0,40); Close.Position = UDim2.new(0,10,0,435); Close.BackgroundColor3 = Color3.new(0.2,0,0); Close.Text = "HỦY SCRIPT"; Close.TextColor3 = Color3.new(1,1,1); Close.Font = Enum.Font.SourceSansBold
 Close.MouseButton1Click:Connect(function()
     _G.Active = false
-    if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        LP.Character.Humanoid.WalkSpeed = 16
-        for _, part in pairs(LP.Character:GetDescendants()) do
-            if part:IsA("BasePart") then part.CanCollide = true end
-        end
-    end
-    if CurrentNoclipTool then CurrentNoclipTool:Destroy() end
+    if CurrentNoclip then CurrentNoclip:Destroy() end
     G:Destroy()
 end)
 
@@ -183,57 +117,37 @@ ToggleBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible e
 RS.Heartbeat:Connect(function()
     if not _G.Active then return end
     pcall(function()
-        LP.Character.Humanoid.WalkSpeed = _G.Speed
-        if _G.Fly then LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 50, 0) end
-
-        local myHRP = LP.Character.HumanoidRootPart
-        for _, v in pairs(Players:GetPlayers()) do
-            if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
-                local head = v.Character:FindFirstChild("Head")
-                local hum = v.Character:FindFirstChild("Humanoid")
-                local hrp = v.Character.HumanoidRootPart
-                
-                -- ESP
-                if _G.ESP and head then
-                    local tag = head:FindFirstChild("G_Tag")
-                    if not tag then
-                        tag = Instance.new("BillboardGui", head); tag.Name = "G_Tag"; tag.Size = UDim2.new(0, 200, 0, 100); tag.AlwaysOnTop = true; tag.StudsOffset = Vector3.new(0, 3, 0)
-                        local l = Instance.new("TextLabel", tag); l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = NeonRed; l.Font = Enum.Font.SourceSansBold; l.TextSize = 16
+        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+            LP.Character.Humanoid.WalkSpeed = _G.Speed
+            if _G.Fly then LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 50, 0) end
+            
+            -- Logic Auto Block cho TSB
+            if _G.AutoBlock then
+                for _, v in pairs(Players:GetPlayers()) do
+                    if v ~= LP and v.Character and v.Character:FindFirstChild("Humanoid") then
+                        local dist = (LP.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude
+                        if dist < 25 then
+                            local anim = v.Character.Humanoid:FindFirstChildOfClass("Animator")
+                            if anim then
+                                for _, t in pairs(anim:GetPlayingAnimationTracks()) do
+                                    if t.IsPlaying and t.Speed > 1.1 then 
+                                        VIM:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+                                        blockTick = tick()
+                                    end
+                                end
+                            end
+                        end
                     end
-                    tag.TextLabel.Text = v.Name.."\nHP: "..math.floor(hum.Health).."\n"..math.floor((myHRP.Position - hrp.Position).Magnitude).."m"
-                elseif not _G.ESP and head and head:FindFirstChild("G_Tag") then
-                    head.G_Tag:Destroy()
-                end
-
-                -- AUTO BLOCK
-                if _G.AutoBlock and (myHRP.Position - hrp.Position).Magnitude < 25 then
-                    local anim = hum:FindFirstChildOfClass("Animator")
-                    if anim then for _, t in pairs(anim:GetPlayingAnimationTracks()) do if t.IsPlaying and t.Speed > 1.1 then VIM:SendKeyEvent(true, Enum.KeyCode.F, false, game); blockTick = tick() break end end end
                 end
             end
+            if _G.AutoBlock and tick() - blockTick > 0.4 then VIM:SendKeyEvent(false, Enum.KeyCode.F, false, game) end
         end
-
-        -- SMART AIM
-        if _G.Aim then
-            local closestDist = 1000
-            local targetHRP = nil
-            for _, v in pairs(Players:GetPlayers()) do
-                if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character.Humanoid.Health > 0 then
-                    local dist = (myHRP.Position - v.Character.HumanoidRootPart.Position).Magnitude
-                    if dist < closestDist then closestDist = dist; targetHRP = v.Character.HumanoidRootPart end
-                end
-            end
-            if targetHRP then
-                myHRP.CFrame = CFrame.new(myHRP.Position, Vector3.new(targetHRP.Position.X, myHRP.Position.Y, targetHRP.Position.Z))
-            end
-        end
-
-        if _G.AutoBlock and tick() - blockTick > 0.4 then VIM:SendKeyEvent(false, Enum.KeyCode.F, false, game) end
     end)
 end)
 
-task.spawn(function() 
-    StartIntro(); 
-    Main.Visible = true; 
-    ToggleBtn.Visible = true;
+-- [CHẠY SCRIPT]
+task.spawn(function()
+    StartIntro()
+    Main.Visible = true
+    ToggleBtn.Visible = true
 end)
