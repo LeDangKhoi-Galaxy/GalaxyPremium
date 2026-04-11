@@ -1,9 +1,7 @@
 --[[ 
-    GALAXY PREMIUM v5.4 - JOYSTICK FLY UPDATE
-    - UPDATED: Fly Mode follows Movement Direction (Joystick).
-    - RESTORED: Player Tool (Loop TP & Bring Player).
-    - CLEAN EXIT: "HỦY SCRIPT" removes UI, Tools & BV.
-    - AUTO-ACTIVATE: No Camera Shake after Intro.
+    GALAXY PREMIUM v5.5 - 3D DIRECTIONAL FLY
+    - FIXED: Fly Mode now supports Up/Down based on Camera Angle + Joystick.
+    - RETAINED: All previous features (Player Tool, No Shake, Noclip Tool).
     - AUTHENTIC BY: LeDangKhoi 
 ]]
 
@@ -161,7 +159,7 @@ AddMainBtn("PLAYER TOOL", 270, function(v) SubMenu.Visible = v end)
 
 local WalkSpeedBox = Instance.new("TextBox", Main); WalkSpeedBox.Size = UDim2.new(1, -20, 0, 45); WalkSpeedBox.Position = UDim2.new(0, 10, 0, 325); WalkSpeedBox.BackgroundColor3 = Color3.fromRGB(30,30,30); WalkSpeedBox.Text = "TỐC ĐỘ ĐI (16)"; WalkSpeedBox.TextColor3 = NeonRed; WalkSpeedBox.Font = Enum.Font.SourceSansBold; WalkSpeedBox.FocusLost:Connect(function() _G.Speed = tonumber(WalkSpeedBox.Text) or 16 end)
 
--- HỦY SCRIPT (CLEAN ALL)
+-- HỦY SCRIPT
 local Close = Instance.new("TextButton", Main); Close.Size = UDim2.new(1,-20,0,45); Close.Position = UDim2.new(0,10,0,435); Close.BackgroundColor3 = Color3.new(0.2,0,0); Close.Text = "HỦY SCRIPT"; Close.TextColor3 = Color3.new(1,1,1); Close.Font = Enum.Font.SourceSansBold
 Close.MouseButton1Click:Connect(function() 
     _G.Active = false
@@ -180,26 +178,30 @@ RS.Heartbeat:Connect(function()
         local char = LP.Character; local hrp = char.HumanoidRootPart; local hum = char.Humanoid
         hum.WalkSpeed = _G.Speed
         
-        -- Fly Mode theo Joystick (MoveDirection)
+        -- Fly Mode 3D (Joystick + Camera Angle)
         if _G.Fly then
             if not BV then
                 BV = Instance.new("BodyVelocity", hrp); BV.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
             end
             
-            -- Nếu có di chuyển (Joystick đẩy), bay theo hướng đó. Nếu không, đứng yên (lơ lửng).
             if hum.MoveDirection.Magnitude > 0 then
-                BV.Velocity = hum.MoveDirection * _G.FlySpeed
+                -- Tính toán Vector di chuyển dựa trên Camera để có thể bay lên/xuống
+                local camCFrame = Camera.CFrame
+                local moveDir = hum.MoveDirection
+                
+                -- Kết hợp: Hướng di chuyển ngang của Joystick * Hướng nhìn dọc của Camera
+                local direction = (camCFrame.LookVector * moveDir.Z) + (camCFrame.RightVector * moveDir.X)
+                BV.Velocity = direction.Unit * _G.FlySpeed
             else
                 BV.Velocity = Vector3.new(0, 0, 0)
             end
         elseif BV then BV:Destroy(); BV = nil end
 
-        -- Noclip
+        -- Noclip & ESP & Aim (Giữ nguyên logic v5.4)
         if _G.Noclip then
             for _, part in pairs(char:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = false end end
         end
 
-        -- ESP & Aim
         local targetHRP = nil; local closestDist = 1000 
         for _, v in pairs(Players:GetPlayers()) do
             if v ~= LP and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
