@@ -123,7 +123,7 @@ AddMainBtn("TP TO VOID", 260, function(v)
     elseif not v and LP.Character then LP.Character.HumanoidRootPart.CFrame = LastPosBeforeVoid or CFrame.new(0, 50, 0) end
 end)
 
-local Inp = Instance.new("TextBox", Main); Inp.Size = UDim2.new(1, -16, 0, 38); Inp.Position = UDim2.new(0, 8, 0, 310); Inp.BackgroundColor3 = Color3.fromRGB(30,30,30); Inp.Text = "16"; Inp.PlaceholderText = "SPEED"; Inp.TextColor3 = NeonRed; Inp.Font = Enum.Font.SourceSansBold; Inp.TextSize = 18; Instance.new("UIStroke", Inp).Color = NeonRed
+local Inp = Instance.new("TextBox", Main); Inp.Size = UDim2.new(1, -16, 0, 38); Inp.Position = UDim2.new(0, 8, 0, 310); Inp.BackgroundColor3 = Color3.fromRGB(30,30,30); Inp.Text = "16"; Inp.PlaceholderText = "NHẬP TỐC ĐỘ..."; Inp.TextColor3 = NeonRed; Inp.Font = Enum.Font.SourceSansBold; Inp.TextSize = 18; Instance.new("UIStroke", Inp).Color = NeonRed
 Inp.FocusLost:Connect(function() _G.Speed = tonumber(Inp.Text) or 16 end)
 
 local Close = Instance.new("TextButton", Main); Close.Size = UDim2.new(1,-16,0,35); Close.Position = UDim2.new(0,8,0,405); Close.BackgroundColor3 = Color3.new(0.2,0,0); Close.Text = "HỦY SCRIPT"; Close.TextColor3 = Color3.new(1,1,1); Close.Font = Enum.Font.SourceSansBold; Close.TextSize = 14
@@ -136,7 +136,7 @@ Close.MouseButton1Click:Connect(function()
 end)
 
 -- [PLAYER TOOL SUBMENU CONTENT]
-local NameBox = Instance.new("TextBox", SubMenu); NameBox.Size = UDim2.new(1, -16, 0, 35); NameBox.Position = UDim2.new(0, 8, 0, 45); NameBox.BackgroundColor3 = Color3.fromRGB(30,30,30); NameBox.PlaceholderText = "Player Name..."; NameBox.Text = ""; NameBox.TextColor3 = Color3.new(1,1,1); NameBox.Font = Enum.Font.SourceSansBold; NameBox.TextSize = 14; Instance.new("UIStroke", NameBox).Color = NeonRed
+local NameBox = Instance.new("TextBox", SubMenu); NameBox.Size = UDim2.new(1, -16, 0, 35); NameBox.Position = UDim2.new(0, 8, 0, 45); NameBox.BackgroundColor3 = Color3.fromRGB(30,30,30); NameBox.PlaceholderText = "NHẬP TÊN..."; NameBox.Text = ""; NameBox.TextColor3 = Color3.new(1,1,1); NameBox.Font = Enum.Font.SourceSansBold; NameBox.TextSize = 14; Instance.new("UIStroke", NameBox).Color = NeonRed
 NameBox.FocusLost:Connect(function() _G.TargetName = NameBox.Text end)
 
 local function GetPlayerSmart(name)
