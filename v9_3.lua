@@ -1,8 +1,7 @@
 --[[ 
-   GALAXY PREMIUM v5.5.6.1 - FULL RESTORED
-   - ADDED: PLAYER TOOL (Loop TP, Bring Player) - FIXED!
-   - ADDED: FFlag Dark Potato & No Shake (TSB).
-   - NOCLIP: Permanent Backpack Tool.
+   GALAXY PREMIUM v5.5.6.2 - CLEAN EXIT UPDATE
+   - FIXED: Noclip Tool tự động biến mất hoàn toàn khi nhấn "HỦY SCRIPT".
+   - ADDED: Tối ưu hóa bộ nhớ khi thoát Script.
    - AUTHENTIC BY: LeDangKhoi & Gemini
 ]]
 
@@ -12,7 +11,36 @@ local RS = game:GetService("RunService")
 local VIM = game:GetService("VirtualInputManager")
 local TS = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
-local Camera = workspace.CurrentCamera
+
+-- [BIẾN HỆ THỐNG]
+_G.Active = true
+_G.TargetName = ""; _G.Speed = 50; _G.Fly = false; _G.AutoBlock = false; _G.Aim = false; _G.ESP = false
+_G.LoopTP = false; _G.Bring = false; _G.VoidActive = false
+local blockTick = 0
+local LastPosBeforeVoid = nil 
+local CurrentVoidPlate = nil 
+local NeonRed = Color3.fromRGB(255, 0, 0)
+local CurrentNoclip = nil -- Biến quản lý Tool Noclip
+
+-- [HÀM DỌN DẸP TOOL NOCLIP]
+local function ClearNoclipTool()
+    if CurrentNoclip then 
+        CurrentNoclip:Destroy() 
+        CurrentNoclip = nil 
+    end
+    -- Kiểm tra kỹ trong túi đồ và nhân vật để xóa sạch
+    local oldTool = LP.Backpack:FindFirstChild("Noclip") or (LP.Character and LP.Character:FindFirstChild("Noclip"))
+    if oldTool then oldTool:Destroy() end
+end
+
+-- [HÀM TẠO TOOL NOCLIP]
+local function GiveNoclip()
+    if not _G.Active then return end
+    ClearNoclipTool() -- Đảm bảo không bị nhân bản tool
+    local t = Instance.new("Tool")
+    t.Name = "Noclip"; t.RequiresHandle = false; t.Parent = LP.Backpack
+    CurrentNoclip = t
+end
 
 -- [HỆ THỐNG FFLAG & NO SHAKE]
 local function ApplyFFlags()
@@ -48,31 +76,10 @@ local function DisableShake()
     end)
 end
 
--- [BIẾN HỆ THỐNG]
-_G.Active = true
-_G.TargetName = ""; _G.Speed = 50; _G.Fly = false; _G.AutoBlock = false; _G.Aim = false; _G.ESP = false
-_G.LoopTP = false; _G.Bring = false; _G.VoidActive = false
-local blockTick = 0
-local LastPosBeforeVoid = nil 
-local CurrentVoidPlate = nil 
-local NeonRed = Color3.fromRGB(255, 0, 0)
-
--- [HÀM TÌM NGƯỜI CHƠI]
-local function GetPlayerSmart(name)
-    if name == "" then return nil end
-    name = name:lower()
-    for _, v in pairs(Players:GetPlayers()) do 
-        if v ~= LP and (v.Name:lower():find(name) or (v.DisplayName and v.DisplayName:lower():find(name))) then 
-            return v 
-        end 
-    end
-    return nil
-end
-
 -- [DỌN DẸP & GUI]
 for _, v in pairs(LP.PlayerGui:GetChildren()) do if v.Name:find("Galaxy") then v:Destroy() end end
 local G = Instance.new("ScreenGui", LP.PlayerGui)
-G.Name = "Galaxy_Final_V2"; G.ResetOnSpawn = false
+G.Name = "Galaxy_Final_V5562"; G.ResetOnSpawn = false
 
 -- [INTRO V4.4]
 local function StartIntro()
@@ -90,16 +97,13 @@ local function StartIntro()
     task.wait(0.6); Overlay:Destroy()
 end
 
--- [NOCLIP TOOL]
-local function GiveNoclip()
-    if not _G.Active then return end
-    local t = Instance.new("Tool")
-    t.Name = "Noclip"; t.RequiresHandle = false; t.Parent = LP.Backpack
-    return t
-end
-local CurrentNoclip = GiveNoclip()
-LP.CharacterAdded:Connect(function() task.wait(0.5); if _G.Active then CurrentNoclip = GiveNoclip() end end)
+-- [HỒI SINH TỰ CẤP LẠI TOOL]
+LP.CharacterAdded:Connect(function() 
+    task.wait(0.5)
+    if _G.Active then GiveNoclip() end 
+end)
 
+-- [VÒNG LẶP XUYÊN TƯỜNG]
 RS.RenderStepped:Connect(function()
     if _G.Active and LP.Character and CurrentNoclip and CurrentNoclip.Parent == LP.Character then
         for _, v in pairs(LP.Character:GetDescendants()) do
@@ -115,7 +119,7 @@ local function CreateTitle(p, txt)
 end
 CreateTitle(Main, "GALAXY PREMIUM - LeDangKhoi")
 
--- [PLAYER TOOL SUBMENU - PHỤC HỒI]
+-- [PLAYER TOOL SUBMENU]
 local SubMenu = Instance.new("Frame", G); SubMenu.Visible = false; SubMenu.Size = UDim2.new(0, 200, 0, 260); SubMenu.Position = UDim2.new(0.5, 10, 0.3, 0); SubMenu.BackgroundColor3 = Color3.fromRGB(15, 15, 15); SubMenu.Active = true; SubMenu.Draggable = true; Instance.new("UIStroke", SubMenu).Color = NeonRed
 CreateTitle(SubMenu, "PLAYER TOOL")
 
@@ -125,6 +129,14 @@ NameBox:GetPropertyChangedSignal("Text"):Connect(function() _G.TargetName = Name
 local function AddSubBtn(n, y, c)
     local b = Instance.new("TextButton", SubMenu); b.Size = UDim2.new(1, -20, 0, 45); b.Position = UDim2.new(0, 10, 0, y); b.BackgroundColor3 = Color3.fromRGB(30,30,30); b.Text = n..": OFF"; b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.SourceSansBold; b.TextSize = 14
     local s = false; b.MouseButton1Click:Connect(function() s = not s; b.Text = n..(s and ": ON" or ": OFF"); b.TextColor3 = s and NeonRed or Color3.new(1,1,1); c(s) end)
+end
+local function GetPlayerSmart(name)
+    if name == "" then return nil end
+    name = name:lower()
+    for _, v in pairs(Players:GetPlayers()) do 
+        if v ~= LP and (v.Name:lower():find(name) or (v.DisplayName and v.DisplayName:lower():find(name))) then return v end 
+    end
+    return nil
 end
 AddSubBtn("LOOP TELEPORT", 100, function(v) _G.LoopTP = v; task.spawn(function() while _G.LoopTP and _G.Active do task.wait(); local t = GetPlayerSmart(_G.TargetName); if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LP.Character then LP.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3) end end end) end)
 AddSubBtn("BRING PLAYER", 155, function(v) _G.Bring = v; task.spawn(function() while _G.Bring and _G.Active do task.wait(); local t = GetPlayerSmart(_G.TargetName); if t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") and LP.Character then t.Character.HumanoidRootPart.CFrame = LP.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3) end end end) end)
@@ -157,8 +169,15 @@ end)
 
 local Inp = Instance.new("TextBox", Main); Inp.Size = UDim2.new(1, -20, 0, 45); Inp.Position = UDim2.new(0, 10, 0, 380); Inp.BackgroundColor3 = Color3.fromRGB(30,30,30); Inp.Text = "50"; Inp.TextColor3 = NeonRed; Inp.Font = Enum.Font.SourceSansBold; Inp.TextSize = 18; Inp.FocusLost:Connect(function() _G.Speed = tonumber(Inp.Text) or 16 end)
 
+-- [NÚT HỦY SCRIPT - FIXED]
 local Close = Instance.new("TextButton", Main); Close.Size = UDim2.new(1,-20,0,40); Close.Position = UDim2.new(0,10,0,435); Close.BackgroundColor3 = Color3.new(0.2,0,0); Close.Text = "HỦY SCRIPT"; Close.TextColor3 = Color3.new(1,1,1); Close.Font = Enum.Font.SourceSansBold
-Close.MouseButton1Click:Connect(function() _G.Active = false; if CurrentVoidPlate then CurrentVoidPlate:Destroy() end; G:Destroy() end)
+Close.MouseButton1Click:Connect(function() 
+    _G.Active = false 
+    ClearNoclipTool() -- XÓA TOOL NGAY LẬP TỨC
+    if CurrentVoidPlate then CurrentVoidPlate:Destroy() end
+    if LP.Character and LP.Character:FindFirstChild("Humanoid") then LP.Character.Humanoid.WalkSpeed = 16 end
+    G:Destroy() 
+end)
 
 local ToggleBtn = Instance.new("TextButton", G); ToggleBtn.Visible = false; ToggleBtn.Size = UDim2.new(0, 85, 0, 35); ToggleBtn.Position = UDim2.new(0, 10, 0.5, 0); ToggleBtn.BackgroundColor3 = Color3.new(0,0,0); ToggleBtn.Text = "GALAXY"; ToggleBtn.TextColor3 = NeonRed; ToggleBtn.Font = Enum.Font.SourceSansBold; ToggleBtn.TextSize = 12; Instance.new("UIStroke", ToggleBtn).Color = NeonRed
 ToggleBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
@@ -199,4 +218,11 @@ RS.Heartbeat:Connect(function()
     end)
 end)
 
-task.spawn(function() ApplyFFlags(); DisableShake(); StartIntro(); Main.Visible = true; ToggleBtn.Visible = true end)
+task.spawn(function() 
+    ApplyFFlags()
+    DisableShake()
+    StartIntro()
+    GiveNoclip() -- Chỉ cấp tool sau khi hiện intro
+    Main.Visible = true
+    ToggleBtn.Visible = true 
+end)
