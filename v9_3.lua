@@ -1,10 +1,7 @@
 --[[ 
-   GALAXY PREMIUM v5.4 - FULL CLEANUP SYSTEM
-   - CLEANUP: "HỦY SCRIPT" giờ đây xóa sạch ESP, Speed, Fly, Aim và thu hồi Tool.
-   - ESP: Username, HP, Distance (Classic Style).
-   - TOOL: "Noclip" auto-added, clean removal on exit.
-   - RETAIN: Void plate stays after cleanup if active.
-   - AUTHENTIC BY: LeDangKhoi
+   GALAXY PREMIUM v5.4.1 - NOCLIP UPDATED
+   - UPDATE: Nút bật/tắt Noclip Tool ở góc trên bên phải.
+   - AUTHENTIC BY: LeDangKhoi & Gemini
 ]]
 
 local Players = game:GetService("Players")
@@ -92,7 +89,6 @@ local function StartIntro()
     task.wait(0.6); Overlay:Destroy()
     
     ApplyFFlags()
-    NoclipTool.Parent = LP.Backpack
 end
 
 -- [MAIN MENU]
@@ -104,6 +100,33 @@ local function CreateTitle(p, txt)
 end
 CreateTitle(Main, "GALAXY Premium - LeDangKhoi")
 CreateTitle(SubMenu, "PLAYER TOOL")
+
+-- [NOCLIP TOGGLE TOP-RIGHT]
+local NoclipBtn = Instance.new("TextButton", G)
+NoclipBtn.Name = "NoclipToggle"
+NoclipBtn.Visible = false
+NoclipBtn.Size = UDim2.new(0, 100, 0, 35)
+NoclipBtn.Position = UDim2.new(1, -110, 0, 10)
+NoclipBtn.BackgroundColor3 = Color3.new(0,0,0)
+NoclipBtn.Text = "NOCLIP: OFF"
+NoclipBtn.TextColor3 = Color3.new(1,1,1)
+NoclipBtn.Font = Enum.Font.SourceSansBold
+NoclipBtn.TextSize = 14
+Instance.new("UIStroke", NoclipBtn).Color = NeonRed
+
+local ncActive = false
+NoclipBtn.MouseButton1Click:Connect(function()
+    ncActive = not ncActive
+    if ncActive then
+        NoclipBtn.Text = "NOCLIP: ON"
+        NoclipBtn.TextColor3 = NeonRed
+        NoclipTool.Parent = LP.Backpack
+    else
+        NoclipBtn.Text = "NOCLIP: OFF"
+        NoclipBtn.TextColor3 = Color3.new(1,1,1)
+        NoclipTool.Parent = nil
+    end
+end)
 
 local function AddSubBtn(n, y, c)
     local b = Instance.new("TextButton", SubMenu); b.Size = UDim2.new(1, -20, 0, 45); b.Position = UDim2.new(0, 10, 0, y); b.BackgroundColor3 = Color3.fromRGB(30,30,30); b.Text = n..": OFF"; b.TextColor3 = Color3.new(1,1,1); b.Font = Enum.Font.SourceSansBold; b.TextSize = 14
@@ -228,4 +251,9 @@ RS.Heartbeat:Connect(function()
     end)
 end)
 
-task.spawn(function() StartIntro(); Main.Visible = true; ToggleBtn.Visible = true end)
+task.spawn(function() 
+    StartIntro(); 
+    Main.Visible = true; 
+    ToggleBtn.Visible = true; 
+    NoclipBtn.Visible = true 
+end)
