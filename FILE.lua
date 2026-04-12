@@ -1,25 +1,24 @@
--- GALAXY Premium v4.4 - DRAG-TO-LOCK MODULE
-local Bone_Head = 0.95        -- Ghim đúng đỉnh đầu
-local Drag_Sensitivity = 5    -- Độ nhạy nhận diện kéo (pixel)
-local Is_Locked = false
+-- GALAXY Premium v4.4 - NO SPREAD & BULLET STRAIGHT
+local Max_Accuracy = 1.0       -- Đẩy độ chính xác lên mức 100%
+local Spread_Reduction = 0.0   -- Ép độ nở tâm về 0
+local Recoil_Control = 0.95    -- Giảm độ giật súng 95%
 
-function OnTouchUpdate(touch_start_y, touch_current_y, enemy_pos, current_aim)
-    -- Tính toán quãng đường tay bạn đã kéo trên màn hình
-    local drag_distance = touch_start_y - touch_current_y 
-    
-    -- 1. Phát hiện hành động kéo tâm (vuốt lên trên)
-    if drag_distance > Drag_Sensitivity then
+function BulletControl(is_firing)
+    if is_firing then
+        -- 1. Triệt tiêu độ nở tâm khi sấy lâu
+        SetWeaponSpread(Spread_Reduction)
         
-        -- Xác định vị trí đỉnh đầu đối thủ
-        local target_y = enemy_pos.y + (enemy_pos.height * Bone_Head)
+        -- 2. Giữ đường đạn đi thẳng theo trục tọa độ đã ghim ở đầu
+        SetBulletTrajectory("Straight")
         
-        -- 2. Cơ chế Ghim chặt: Ngay khi phát hiện kéo, ép tâm vào đầu
-        Is_Locked = true
-        return target_y -- Trả về tọa độ đầu ngay lập tức
-        
-    else
-        -- 3. Nếu không kéo hoặc thả tay: Trả lại trạng thái bình thường
-        Is_Locked = false
-        return current_aim.y
+        -- 3. Tăng độ ổn định cho khung hình để không bị rung khi đạn ra
+        SetCameraStability(100)
     end
+end
+
+-- Kết hợp với logic Ghim Đầu trước đó
+function OnDragToLock(enemy_pos)
+    local target_y = enemy_pos.y + (enemy_pos.height * 0.95) -- Ghim đỉnh đầu
+    BulletControl(true) -- Kích hoạt đạn thẳng
+    return target_y
 end
