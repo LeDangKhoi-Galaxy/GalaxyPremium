@@ -1,24 +1,26 @@
--- GALAXY Premium v4.4 - NO SPREAD & BULLET STRAIGHT
-local Max_Accuracy = 1.0       -- Đẩy độ chính xác lên mức 100%
-local Spread_Reduction = 0.0   -- Ép độ nở tâm về 0
-local Recoil_Control = 0.95    -- Giảm độ giật súng 95%
+-- GALAXY Premium v4.4 - SMART AUTO-RELEASE
+local Bone_Target = 0.96      
+local Instant_Lock = true     
+local Spread_Fix = 0.0        
 
-function BulletControl(is_firing)
-    if is_firing then
-        -- 1. Triệt tiêu độ nở tâm khi sấy lâu
-        SetWeaponSpread(Spread_Reduction)
-        
-        -- 2. Giữ đường đạn đi thẳng theo trục tọa độ đã ghim ở đầu
-        SetBulletTrajectory("Straight")
-        
-        -- 3. Tăng độ ổn định cho khung hình để không bị rung khi đạn ra
-        SetCameraStability(100)
+function OnFireButtonDown(is_touching, enemy_pos, enemy_status)
+    -- 1. KIỂM TRA TRẠNG THÁI: Nếu địch gục hoặc không còn chạm nút bắn
+    if not is_touching or enemy_status == "DOWN" or enemy_status == "ELIMINATED" then
+        -- TRẢ TÂM LẠI BÌNH THƯỜNG: Giải phóng camera để tìm địch mới
+        ResetAimLock()
+        return nil 
     end
-end
 
--- Kết hợp với logic Ghim Đầu trước đó
-function OnDragToLock(enemy_pos)
-    local target_y = enemy_pos.y + (enemy_pos.height * 0.95) -- Ghim đỉnh đầu
-    BulletControl(true) -- Kích hoạt đạn thẳng
-    return target_y
+    -- 2. XÁC ĐỊNH MỤC TIÊU (Nếu địch còn sống và đang nhấn bắn)
+    if is_touching and enemy_status == "ALIVE" then
+        local head_y = enemy_pos.y + (enemy_pos.height * Bone_Target)
+        
+        -- ÉP TÂM VÀO ĐỈNH ĐẦU
+        SetCrosshairPosition(head_y)
+        
+        -- ĐẠN THẲNG
+        FixBulletTrajectory(Spread_Fix)
+        
+        return head_y
+    end
 end
