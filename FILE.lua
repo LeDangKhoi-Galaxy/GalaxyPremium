@@ -1,34 +1,34 @@
--- GALAXY Premium v4.4 - SUPER SENSITIVE & INSTANT LOCK
+-- GALAXY Premium v4.4 - TOTAL LOCK (FIX ĐỨNG IM)
 local Bone_Target = 0.96      
 local Instant_Lock = true     
 local Spread_Fix = 0.0        
-local Sensitivity_Boost = 2.5 -- Tăng tốc độ nhận diện cảm ứng (x2.5 lần)
-local Response_Delay = 0      -- Triệt tiêu độ trễ phản hồi
+local Prediction_Scale = 1.5 
 
-function OnFireButtonDown(is_touching, enemy_pos, enemy_status)
-    -- Tăng tốc độ quét lệnh hệ thống
-    SetResponseRate(Response_Delay)
-
-    -- 1. KIỂM TRA TRẠNG THÁI: Nếu địch gục hoặc thả tay
+function OnFireButtonDown(is_touching, enemy_pos, enemy_velocity, enemy_status)
+    -- 1. THOÁT LỆNH: Nếu thả tay hoặc địch gục
     if not is_touching or enemy_status == "DOWN" then
         ResetAimLock()
         return nil 
     end
 
-    -- 2. CƠ CHẾ SIÊU NHẠY: Chỉ cần chạm hoặc nhích nhẹ là khóa
+    -- 2. LOGIC KHÓA MỤC TIÊU TỔNG LỰC
     if is_touching and enemy_status == "ALIVE" then
-        local target_y = enemy_pos.y + (enemy_pos.height * Bone_Target)
+        -- Tọa độ đỉnh đầu gốc
+        local head_x = enemy_pos.x
+        local head_y = enemy_pos.y + (enemy_pos.height * Bone_Target)
         
-        -- Áp dụng gia tốc nhạy để tâm nhảy lên đỉnh đầu ngay lập tức
-        local current_y = GetCrosshairY()
-        local instant_move = (target_y - current_y) * Sensitivity_Boost
+        -- KIỂM TRA CHUYỂN ĐỘNG:
+        if math.abs(enemy_velocity.x) < 0.1 and math.abs(enemy_velocity.y) < 0.1 then
+            -- TRƯỜNG HỢP ĐỊCH ĐỨNG IM: Ghim chết tại tọa độ gốc
+            SetCrosshairPosition(head_x, head_y)
+        else
+            -- TRƯỜNG HỢP ĐỊCH DI CHUYỂN: Kích hoạt dự đoán đón đầu
+            local predict_x = head_x + (enemy_velocity.x * Prediction_Scale)
+            local predict_y = head_y + (enemy_velocity.y * Prediction_Scale)
+            SetCrosshairPosition(predict_x, predict_y)
+        end
         
-        -- ÉP TÂM HARD LOCK TỨC THÌ
-        SetCrosshairPosition(current_y + instant_move)
-        
-        -- ĐẠN THẲNG TUYỆT ĐỐI
+        -- Luôn giữ đạn thẳng
         FixBulletTrajectory(Spread_Fix)
-        
-        return target_y
     end
 end
