@@ -1,26 +1,23 @@
--- GALAXY Premium v4.4 - SMART AUTO-RELEASE
-local Bone_Target = 0.96      
-local Instant_Lock = true     
-local Spread_Fix = 0.0        
+-- GALAXY Premium v4.4 - INSTANT HEADSHOT MODULE
+local Bone_Target = 0.96      -- Vị trí đỉnh đầu (Full Red)
+local Instant_Lock = true     -- Khóa tức thì khi chạm
+local Spread_Fix = 0.0        -- Đạn đi thẳng tắp
 
-function OnFireButtonDown(is_touching, enemy_pos, enemy_status)
-    -- 1. KIỂM TRA TRẠNG THÁI: Nếu địch gục hoặc không còn chạm nút bắn
-    if not is_touching or enemy_status == "DOWN" or enemy_status == "ELIMINATED" then
-        -- TRẢ TÂM LẠI BÌNH THƯỜNG: Giải phóng camera để tìm địch mới
-        ResetAimLock()
-        return nil 
-    end
-
-    -- 2. XÁC ĐỊNH MỤC TIÊU (Nếu địch còn sống và đang nhấn bắn)
-    if is_touching and enemy_status == "ALIVE" then
+function OnFireButtonDown(is_touching, enemy_pos)
+    if is_touching then
+        -- 1. XÁC ĐỊNH MỤC TIÊU: Ngay khi chạm nút bắn
         local head_y = enemy_pos.y + (enemy_pos.height * Bone_Target)
         
-        -- ÉP TÂM VÀO ĐỈNH ĐẦU
+        -- 2. ÉP TÂM (HARD LOCK): Không cần kéo, tâm tự nhảy lên đầu
         SetCrosshairPosition(head_y)
         
-        -- ĐẠN THẲNG
+        -- 3. ĐẠN THẲNG: Triệt tiêu hoàn toàn độ lệch đạn
         FixBulletTrajectory(Spread_Fix)
         
+        -- 4. GIỮ CHẶT: Ghim tâm tại đó cho đến khi thả tay
         return head_y
+    else
+        -- Trả lại tâm khi buông nút bắn
+        return nil
     end
 end
