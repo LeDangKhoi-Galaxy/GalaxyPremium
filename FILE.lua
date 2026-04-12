@@ -1,23 +1,34 @@
--- GALAXY Premium v4.4 - INSTANT HEADSHOT MODULE
-local Bone_Target = 0.96      -- Vị trí đỉnh đầu (Full Red)
-local Instant_Lock = true     -- Khóa tức thì khi chạm
-local Spread_Fix = 0.0        -- Đạn đi thẳng tắp
+-- GALAXY Premium v4.4 - SUPER SENSITIVE & INSTANT LOCK
+local Bone_Target = 0.96      
+local Instant_Lock = true     
+local Spread_Fix = 0.0        
+local Sensitivity_Boost = 2.5 -- Tăng tốc độ nhận diện cảm ứng (x2.5 lần)
+local Response_Delay = 0      -- Triệt tiêu độ trễ phản hồi
 
-function OnFireButtonDown(is_touching, enemy_pos)
-    if is_touching then
-        -- 1. XÁC ĐỊNH MỤC TIÊU: Ngay khi chạm nút bắn
-        local head_y = enemy_pos.y + (enemy_pos.height * Bone_Target)
+function OnFireButtonDown(is_touching, enemy_pos, enemy_status)
+    -- Tăng tốc độ quét lệnh hệ thống
+    SetResponseRate(Response_Delay)
+
+    -- 1. KIỂM TRA TRẠNG THÁI: Nếu địch gục hoặc thả tay
+    if not is_touching or enemy_status == "DOWN" then
+        ResetAimLock()
+        return nil 
+    end
+
+    -- 2. CƠ CHẾ SIÊU NHẠY: Chỉ cần chạm hoặc nhích nhẹ là khóa
+    if is_touching and enemy_status == "ALIVE" then
+        local target_y = enemy_pos.y + (enemy_pos.height * Bone_Target)
         
-        -- 2. ÉP TÂM (HARD LOCK): Không cần kéo, tâm tự nhảy lên đầu
-        SetCrosshairPosition(head_y)
+        -- Áp dụng gia tốc nhạy để tâm nhảy lên đỉnh đầu ngay lập tức
+        local current_y = GetCrosshairY()
+        local instant_move = (target_y - current_y) * Sensitivity_Boost
         
-        -- 3. ĐẠN THẲNG: Triệt tiêu hoàn toàn độ lệch đạn
+        -- ÉP TÂM HARD LOCK TỨC THÌ
+        SetCrosshairPosition(current_y + instant_move)
+        
+        -- ĐẠN THẲNG TUYỆT ĐỐI
         FixBulletTrajectory(Spread_Fix)
         
-        -- 4. GIỮ CHẶT: Ghim tâm tại đó cho đến khi thả tay
-        return head_y
-    else
-        -- Trả lại tâm khi buông nút bắn
-        return nil
+        return target_y
     end
 end
