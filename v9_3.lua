@@ -1,7 +1,7 @@
 --[[ 
-    GALAXY PREMIUM v5.4.2 - FIXED SPEED DISPLAY
+    GALAXY PREMIUM v5.4.2 - INTEGRATED ANTI-DEATH
     - FIX: Hiển thị tốc độ ngay sau khi nhập.
-    - FIX: Ép xung WalkSpeed trong Heartbeat để đảm bảo tốc độ chạy ổn định.
+    - ADD: Anti Death Counter (Saitama TSB) Standalone GUI.
 ]]
 
 local Players = game:GetService("Players")
@@ -11,6 +11,12 @@ local VIM = game:GetService("VirtualInputManager")
 local TS = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 local Camera = workspace.CurrentCamera
+
+-- [BIẾN CẤU HÌNH ANTI-DEATH]
+local AntiDeathActive = true
+local isEscaping = false
+local LastPosBeforeDeath = nil
+local CurrentDeathPlate = nil
 
 -- [FFLAG DARK POTATO STYLE]
 local function ApplyFFlags()
@@ -40,14 +46,73 @@ end
 
 -- DỌN DẸP UI CŨ
 for _, v in pairs(LP.PlayerGui:GetChildren()) do
-    if v.Name:find("Galaxy") then v:Destroy() end
+    if v.Name:find("Galaxy") or v.Name == "AntiDeath_Module" then v:Destroy() end
 end
 
 local G = Instance.new("ScreenGui", LP.PlayerGui)
 G.Name = "Galaxy_"..math.random(1000,9999); G.ResetOnSpawn = false
 local NeonRed = Color3.fromRGB(255, 0, 0)
 
--- BIẾN HỆ THỐNG
+-- [ANTI DEATH COUNTER GUI - GÓC TRÊN BÊN PHẢI]
+local ADFrame = Instance.new("Frame", G)
+ADFrame.Name = "AntiDeath_Module"
+ADFrame.Size = UDim2.new(0, 130, 0, 45)
+ADFrame.Position = UDim2.new(1, -140, 0, 10)
+ADFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+ADFrame.Active = true
+ADFrame.Draggable = true
+local ADStroke = Instance.new("UIStroke", ADFrame)
+ADStroke.Color = NeonRed
+ADStroke.Thickness = 2
+Instance.new("UICorner", ADFrame).CornerRadius = UDim.new(0, 6)
+
+local ADBtn = Instance.new("TextButton", ADFrame)
+ADBtn.Size = UDim2.new(1, 0, 1, 0)
+ADBtn.BackgroundTransparency = 1
+ADBtn.Text = "ANTI-DEATH: ON"
+ADBtn.TextColor3 = NeonRed
+ADBtn.Font = Enum.Font.SourceSansBold
+ADBtn.TextSize = 14
+
+ADBtn.MouseButton1Click:Connect(function()
+    AntiDeathActive = not AntiDeathActive
+    ADBtn.Text = "ANTI-DEATH: " .. (AntiDeathActive and "ON" or "OFF")
+    ADBtn.TextColor3 = AntiDeathActive and NeonRed or Color3.fromRGB(150, 150, 150)
+    ADStroke.Color = AntiDeathActive and NeonRed or Color3.fromRGB(100, 100, 100)
+end)
+
+-- [HÀM XỬ LÝ THOÁT CHIÊU]
+local function EscapeDeath()
+    if isEscaping or not LP.Character:FindFirstChild("HumanoidRootPart") then return end
+    isEscaping = true
+    
+    local HRP = LP.Character.HumanoidRootPart
+    LastPosBeforeDeath = HRP.CFrame
+    
+    -- Tạo sàn tạm thời dưới Void
+    if not CurrentDeathPlate then
+        CurrentDeathPlate = Instance.new("Part", workspace)
+        CurrentDeathPlate.Size = Vector3.new(100, 1, 100)
+        CurrentDeathPlate.Anchored = true
+        CurrentDeathPlate.Transparency = 1
+        CurrentDeathPlate.CanCollide = true
+    end
+    CurrentDeathPlate.Position = Vector3.new(HRP.Position.X, -1000, HRP.Position.Z)
+    
+    -- Dịch chuyển xuống Void để né sát thương
+    HRP.CFrame = CFrame.new(CurrentDeathPlate.Position + Vector3.new(0, 5, 0))
+    
+    task.wait(3.5) -- Thời gian diễn ra chiêu thức
+    
+    -- Quay lại
+    HRP.CFrame = LastPosBeforeDeath
+    task.wait(0.2)
+    Camera.CameraType = Enum.CameraType.Custom
+    Camera.CameraSubject = LP.Character:FindFirstChild("Humanoid")
+    isEscaping = false
+end
+
+-- BIẾN HỆ THỐNG GALAXY
 _G.Active = true
 _G.TargetName = ""; _G.Speed = 16; _G.Fly = false; _G.AutoBlock = false; _G.Aim = false; _G.ESP = false
 _G.LoopTP = false; _G.Bring = false; _G.VoidActive = false
@@ -62,7 +127,6 @@ local function GiveNoclip()
     Tool.Name = "Noclip"
     Tool.RequiresHandle = false
     Tool.CanBeDropped = false
-    Tool.ToolTip = "Cầm trên tay để đi xuyên tường"
     Tool.Parent = LP.Backpack
 end
 
@@ -76,12 +140,8 @@ RS.Stepped:Connect(function()
     end
 end)
 
-LP.CharacterAdded:Connect(function()
-    task.wait(0.5)
-    GiveNoclip()
-end)
-
--- [INTRO]
+-- [INTRO & MAIN MENU SETUP]
+-- (Giữ nguyên các hàm Intro, CreateTitle, AddSubBtn, AddMainBtn của bạn)
 local function StartIntro()
     local Overlay = Instance.new("Frame", G); Overlay.Size = UDim2.new(1, 0, 1, 0); Overlay.BackgroundColor3 = Color3.new(0, 0, 0); Overlay.BackgroundTransparency = 1; Overlay.ZIndex = 100
     local IntroBox = Instance.new("Frame", Overlay); IntroBox.Size = UDim2.new(0, 400, 0, 100); IntroBox.Position = UDim2.new(0.5, -200, 0.5, -50); IntroBox.BackgroundColor3 = Color3.fromRGB(10, 10, 10); IntroBox.BackgroundTransparency = 1
@@ -102,7 +162,6 @@ local function StartIntro()
     GiveNoclip()
 end
 
--- [MAIN MENU]
 local Main = Instance.new("Frame", G); Main.Visible = false; Main.Size = UDim2.new(0, 220, 0, 520); Main.Position = UDim2.new(0.5, -230, 0.3, 0); Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15); Main.Active = true; Main.Draggable = true; Instance.new("UIStroke", Main).Color = NeonRed
 local SubMenu = Instance.new("Frame", G); SubMenu.Visible = false; SubMenu.Size = UDim2.new(0, 200, 0, 260); SubMenu.Position = UDim2.new(0.5, 10, 0.3, 0); SubMenu.BackgroundColor3 = Color3.fromRGB(15, 15, 15); SubMenu.Active = true; SubMenu.Draggable = true; Instance.new("UIStroke", SubMenu).Color = NeonRed
 
@@ -134,8 +193,8 @@ local function GetPlayerSmart(name)
     return nil
 end
 
-AddSubBtn("LOOP TELEPORT", 105, function(v) _G.LoopTP = v; task.spawn(function() while _G.LoopTP and _G.Active do task.wait(); local t = GetPlayerSmart(_G.TargetName); if t and t.Character and LP.Character then LP.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3) end end end) end)
-AddSubBtn("BRING PLAYER", 160, function(v) _G.Bring = v; task.spawn(function() while _G.Bring and _G.Active do task.wait(); local t = GetPlayerSmart(_G.TargetName); if t and t.Character and LP.Character then t.Character.HumanoidRootPart.CFrame = LP.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3) end end end) end)
+AddSubBtn("LOOP TP", 105, function(v) _G.LoopTP = v; task.spawn(function() while _G.LoopTP and _G.Active do task.wait(); local t = GetPlayerSmart(_G.TargetName); if t and t.Character and LP.Character then LP.Character.HumanoidRootPart.CFrame = t.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3) end end end) end)
+AddSubBtn("BRING", 160, function(v) _G.Bring = v; task.spawn(function() while _G.Bring and _G.Active do task.wait(); local t = GetPlayerSmart(_G.TargetName); if t and t.Character and LP.Character then t.Character.HumanoidRootPart.CFrame = LP.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -3) end end end) end)
 AddMainBtn("SMART AIM", 50, function(v) _G.Aim = v end)
 AddMainBtn("AUTO BLOCK", 105, function(v) _G.AutoBlock = v end)
 AddMainBtn("FLY MODE", 160, function(v) _G.Fly = v end)
@@ -156,42 +215,11 @@ AddMainBtn("TP TO VOID", 325, function(v)
     end 
 end)
 
--- [CHỈNH SỬA PHẦN TỐC ĐỘ]
-local Inp = Instance.new("TextBox", Main);
-Inp.Size = UDim2.new(1, -20, 0, 45);
-Inp.Position = UDim2.new(0, 10, 0, 380);
-Inp.BackgroundColor3 = Color3.fromRGB(30,30,30);
-Inp.PlaceholderText = "NHẬP TỐC ĐỘ...";
-Inp.Text = "TỐC ĐỘ (16)";
-Inp.TextColor3 = NeonRed;
-Inp.Font = Enum.Font.SourceSansBold;
-Inp.TextSize = 18;
-Instance.new("UIStroke", Inp).Color = NeonRed
+local Inp = Instance.new("TextBox", Main); Inp.Size = UDim2.new(1, -20, 0, 45); Inp.Position = UDim2.new(0, 10, 0, 380); Inp.BackgroundColor3 = Color3.fromRGB(30,30,30); Inp.PlaceholderText = "NHẬP TỐC ĐỘ..."; Inp.Text = "TỐC ĐỘ (16)"; Inp.TextColor3 = NeonRed; Inp.Font = Enum.Font.SourceSansBold; Inp.TextSize = 18; Instance.new("UIStroke", Inp).Color = NeonRed
+Inp.FocusLost:Connect(function() local val = tonumber(Inp.Text); if val then _G.Speed = val; Inp.Text = "TỐC ĐỘ ("..val..")" else Inp.Text = "TỐC ĐỘ (".._G.Speed..")" end end)
 
-Inp.FocusLost:Connect(function(enterPressed)
-    local val = tonumber(Inp.Text)
-    if val then
-        _G.Speed = val
-        Inp.Text = "TỐC ĐỘ ("..tostring(val)..")"
-    else
-        Inp.Text = "TỐC ĐỘ ("..tostring(_G.Speed)..")"
-    end
-end)
-
--- [HỆ THỐNG HỦY SCRIPT]
 local Close = Instance.new("TextButton", Main); Close.Size = UDim2.new(1,-20,0,40); Close.Position = UDim2.new(0,10,0,435); Close.BackgroundColor3 = Color3.new(0.2,0,0); Close.Text = "HỦY SCRIPT"; Close.TextColor3 = Color3.new(1,1,1); Close.Font = Enum.Font.SourceSansBold
-Close.MouseButton1Click:Connect(function()
-    _G.Active = false
-    if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        LP.Character.Humanoid.WalkSpeed = 16
-        for _, part in pairs(LP.Character:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = true end end
-    end
-    local t1 = LP.Backpack:FindFirstChild("GALAXY_NOCLIP")
-    local t2 = LP.Character:FindFirstChild("GALAXY_NOCLIP")
-    if t1 then t1:Destroy() end if t2 then t2:Destroy() end
-    for _, p in pairs(Players:GetPlayers()) do if p.Character and p.Character:FindFirstChild("Head") then local tag = p.Character.Head:FindFirstChild("G_Tag") if tag then tag:Destroy() end end end
-    G:Destroy()
-end)
+Close.MouseButton1Click:Connect(function() _G.Active = false; G:Destroy() end)
 
 local ToggleBtn = Instance.new("TextButton", G); ToggleBtn.Visible = false; ToggleBtn.Size = UDim2.new(0, 85, 0, 35); ToggleBtn.Position = UDim2.new(0, 10, 0.5, 0); ToggleBtn.BackgroundColor3 = Color3.new(0,0,0); ToggleBtn.Text = "GALAXY"; ToggleBtn.TextColor3 = NeonRed; ToggleBtn.Font = Enum.Font.SourceSansBold; ToggleBtn.TextSize = 12; Instance.new("UIStroke", ToggleBtn).Color = NeonRed
 ToggleBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
@@ -200,11 +228,26 @@ ToggleBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible e
 RS.Heartbeat:Connect(function()
     if not _G.Active then return end
     pcall(function()
-        -- Luôn ép WalkSpeed theo biến _G.Speed
         if LP.Character and LP.Character:FindFirstChild("Humanoid") then
             LP.Character.Humanoid.WalkSpeed = _G.Speed
         end
         
+        -- LOGIC ANTI-DEATH TRONG VÒNG LẶP
+        if AntiDeathActive and not isEscaping then
+            if Camera.CameraType == Enum.CameraType.Scriptable then
+                local detected = false
+                for _, v in pairs(workspace:GetDescendants()) do
+                    if v:IsA("Sound") and v.Playing and (v.SoundId:find("4630103571") or v.SoundId:find("1353347101")) then
+                        detected = true; break
+                    end
+                end
+                if not detected and LP.Character:FindFirstChildOfClass("Highlight") then
+                    detected = true
+                end
+                if detected then EscapeDeath() end
+            end
+        end
+
         if _G.Fly then LP.Character.HumanoidRootPart.Velocity = Vector3.new(0, 50, 0) end
         
         local myHRP = LP.Character.HumanoidRootPart
@@ -217,7 +260,6 @@ RS.Heartbeat:Connect(function()
                 local hum = v.Character:FindFirstChild("Humanoid")
                 local hrp = v.Character.HumanoidRootPart
 
-                -- ESP
                 if _G.ESP and head then
                     local tag = head:FindFirstChild("G_Tag")
                     if not tag then
@@ -229,13 +271,11 @@ RS.Heartbeat:Connect(function()
                     head.G_Tag:Destroy()
                 end
 
-                -- AIM
                 if _G.Aim and hum.Health > 0 then
                     local dist = (myHRP.Position - hrp.Position).Magnitude
                     if dist < closestDist then closestDist = dist; targetHRP = hrp end
                 end
 
-                -- AUTO BLOCK
                 if _G.AutoBlock and (myHRP.Position - hrp.Position).Magnitude < 25 then
                     local anim = hum:FindFirstChildOfClass("Animator")
                     if anim then
