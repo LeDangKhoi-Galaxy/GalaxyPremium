@@ -131,7 +131,7 @@ end
 -- [HỆ THỐNG NOCLIP]
 local function GiveNoclip()
     if not _G.Active then return end
-    local Tool = Instance.new("Noclip", LP.Backpack)
+    local Tool = Instance.new("Tool", LP.Backpack)
     Tool.Name = "Noclip"
     Tool.RequiresHandle = false
 end
