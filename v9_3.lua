@@ -149,7 +149,7 @@ AddMainBtn("TP TO VOID", 325, function(v)
         if not CurrentVoidPlate then
             CurrentVoidPlate = Instance.new("Part", workspace); CurrentVoidPlate.Name = "Galaxy_Void"; CurrentVoidPlate.Size = Vector3.new(2048, 1, 2048); CurrentVoidPlate.Anchored = true; CurrentVoidPlate.Transparency = 0.5; CurrentVoidPlate.Color = NeonRed; CurrentVoidPlate.Material = Enum.Material.ForceField
         end
-        CurrentVoidPlate.Position = Vector3.new(LP.Character.HumanoidRootPart.Position.X, -500, LP.Character.HumanoidRootPart.Position.Z)
+        CurrentVoidPlate.Position = Vector3.new(LP.Character.HumanoidRootPart.Position.X, -495, LP.Character.HumanoidRootPart.Position.Z)
         LP.Character.HumanoidRootPart.CFrame = CFrame.new(CurrentVoidPlate.Position + Vector3.new(0, 5, 0))
     elseif not v and LP.Character then 
         LP.Character.HumanoidRootPart.CFrame = LastPosBeforeVoid or CFrame.new(0, 50, 0)
@@ -162,7 +162,7 @@ Inp.Size = UDim2.new(1, -20, 0, 45);
 Inp.Position = UDim2.new(0, 10, 0, 380);
 Inp.BackgroundColor3 = Color3.fromRGB(30,30,30);
 Inp.PlaceholderText = "NHẬP TỐC ĐỘ...";
-Inp.Text = "TỐC ĐỘ (16)";
+Inp.Text = "TỐC ĐỘ (20)";
 Inp.TextColor3 = NeonRed;
 Inp.Font = Enum.Font.SourceSansBold;
 Inp.TextSize = 18;
@@ -183,7 +183,7 @@ local Close = Instance.new("TextButton", Main); Close.Size = UDim2.new(1,-20,0,4
 Close.MouseButton1Click:Connect(function()
     _G.Active = false
     if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        LP.Character.Humanoid.WalkSpeed = 16
+        LP.Character.Humanoid.WalkSpeed = 20
         for _, part in pairs(LP.Character:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = true end end
     end
     local t1 = LP.Backpack:FindFirstChild("GALAXY_NOCLIP")
