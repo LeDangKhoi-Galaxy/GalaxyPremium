@@ -162,7 +162,7 @@ Inp.Size = UDim2.new(1, -20, 0, 45);
 Inp.Position = UDim2.new(0, 10, 0, 380);
 Inp.BackgroundColor3 = Color3.fromRGB(30,30,30);
 Inp.PlaceholderText = "NHẬP TỐC ĐỘ...";
-Inp.Text = "TỐC ĐỘ (20)";
+Inp.Text = "TỐC ĐỘ (16)";
 Inp.TextColor3 = NeonRed;
 Inp.Font = Enum.Font.SourceSansBold;
 Inp.TextSize = 18;
@@ -183,7 +183,7 @@ local Close = Instance.new("TextButton", Main); Close.Size = UDim2.new(1,-20,0,4
 Close.MouseButton1Click:Connect(function()
     _G.Active = false
     if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-        LP.Character.Humanoid.WalkSpeed = 20
+        LP.Character.Humanoid.WalkSpeed = 16
         for _, part in pairs(LP.Character:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = true end end
     end
     local t1 = LP.Backpack:FindFirstChild("GALAXY_NOCLIP")
