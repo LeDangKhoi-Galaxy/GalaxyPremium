@@ -149,7 +149,7 @@ AddMainBtn("TP TO VOID", 325, function(v)
         if not CurrentVoidPlate then
             CurrentVoidPlate = Instance.new("Part", workspace); CurrentVoidPlate.Name = "Galaxy_Void"; CurrentVoidPlate.Size = Vector3.new(2048, 1, 2048); CurrentVoidPlate.Anchored = true; CurrentVoidPlate.Transparency = 0.5; CurrentVoidPlate.Color = NeonRed; CurrentVoidPlate.Material = Enum.Material.ForceField
         end
-        CurrentVoidPlate.Position = Vector3.new(LP.Character.HumanoidRootPart.Position.X, -495, LP.Character.HumanoidRootPart.Position.Z)
+        CurrentVoidPlate.Position = Vector3.new(LP.Character.HumanoidRootPart.Position.X, -501, LP.Character.HumanoidRootPart.Position.Z)
         LP.Character.HumanoidRootPart.CFrame = CFrame.new(CurrentVoidPlate.Position + Vector3.new(0, 5, 0))
     elseif not v and LP.Character then 
         LP.Character.HumanoidRootPart.CFrame = LastPosBeforeVoid or CFrame.new(0, 50, 0)
