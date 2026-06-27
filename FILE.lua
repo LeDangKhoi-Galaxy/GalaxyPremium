@@ -32,7 +32,7 @@ local function CreateBtn(name, y)
 end
 
 local SaveBtn = CreateBtn("LƯU VỊ TRÍ", 50)
-local FlyBtn = CreateBtn("LOOP TELEPORT: TẮT", 100) -- Đổi tên nút để phù hợp chức năng mới
+local FlyBtn = CreateBtn("TP", 100)
 
 -- [Ô NHẬP TỐC ĐỘ]
 local SpeedInput = Instance.new("TextBox", MainFrame)
