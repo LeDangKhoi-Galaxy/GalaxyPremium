@@ -1,13 +1,19 @@
 local Players = game:GetService("Players")
 local LP = Players.LocalPlayer
 local RS = game:GetService("RunService")
-local TS = game:GetService("TweenService")
 local StarterGui = game:GetService("StarterGui")
 
 -- [BIẾN HỆ THỐNG]
-local G = Instance.new("ScreenGui", LP:WaitForChild("PlayerGui")); G.Name = "GalaxyMini_"..math.random(1000,9999)
+-- Tạo ScreenGui trực tiếp trong PlayerGui và tắt ResetOnSpawn để không bị mất khi reset nhân vật
+local PlayerGui = LP:WaitForChild("PlayerGui")
+local G = Instance.new("ScreenGui")
+G.Name = "GalaxyMini_"..math.random(1000,9999)
+G.ResetOnSpawn = false -- Giữ giao diện khi chết hoặc hồi sinh
+G.Parent = PlayerGui
+
 local SavedPosition = nil
 local LoopTPConnection = nil -- Biến quản lý vòng lặp dịch chuyển
+local LoopSpeedConnection = nil -- Biến quản lý vòng lặp tốc độ
 local SpeedVal = 25 
 
 local function Notify(msg)
@@ -20,8 +26,11 @@ local Stroke = Instance.new("UIStroke", MainFrame); Stroke.Color = Color3.fromRG
 
 local Title = Instance.new("TextLabel", MainFrame); Title.Size = UDim2.new(1, 0, 0, 40); Title.Text = "GALAXY Mini"; Title.TextColor3 = Color3.fromRGB(255,0,0); Title.BackgroundTransparency = 1; Title.Font = Enum.Font.GothamBold; Title.TextSize = 20
 local CloseBtn = Instance.new("TextButton", MainFrame); CloseBtn.Size = UDim2.new(0, 40, 0, 40); CloseBtn.Position = UDim2.new(1, -40, 0, 0); CloseBtn.Text = "X"; CloseBtn.TextColor3 = Color3.fromRGB(255,0,0); CloseBtn.BackgroundColor3 = Color3.fromRGB(30,0,0); CloseBtn.Font = Enum.Font.SourceSansBold; CloseBtn.TextSize = 20
+
+-- Khi nhấn nút X: Tắt tất cả Loop trước khi xóa GUI
 CloseBtn.MouseButton1Click:Connect(function() 
-    if LoopTPConnection then LoopTPConnection:Disconnect() end
+    if LoopTPConnection then LoopTPConnection:Disconnect(); LoopTPConnection = nil end
+    if LoopSpeedConnection then LoopSpeedConnection:Disconnect(); LoopSpeedConnection = nil end
     G:Destroy() 
 end)
 
@@ -56,16 +65,13 @@ SaveBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Thay đổi logic thành LOOP Teleport liên tục
 FlyBtn.MouseButton1Click:Connect(function()
-    -- Nếu đang bật thì bấm vào sẽ TẮT
     if LoopTPConnection then 
         LoopTPConnection:Disconnect()
         LoopTPConnection = nil
         FlyBtn.Text = "TP"
         FlyBtn.TextColor3 = Color3.fromRGB(255, 0, 0)
         
-        -- Bật lại va chạm cho nhân vật
         if LP.Character then
             for _, part in pairs(LP.Character:GetDescendants()) do 
                 if part:IsA("BasePart") then part.CanCollide = true end 
@@ -74,31 +80,29 @@ FlyBtn.MouseButton1Click:Connect(function()
         return 
     end
     
-    -- Kiểm tra nếu chưa lưu vị trí
     if not SavedPosition then Notify("Chưa có vị trí!"); return end
     
     local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
     if hrp then
         FlyBtn.Text = "DỪNG TP"
-        FlyBtn.TextColor3 = Color3.fromRGB(0, 255, 0) -- Đổi màu xanh khi đang bật
+        FlyBtn.TextColor3 = Color3.fromRGB(0, 255, 0)
         
-        -- Tắt va chạm để tránh bị lỗi kẹt map khi dịch chuyển liên tục
         for _, part in pairs(LP.Character:GetDescendants()) do 
             if part:IsA("BasePart") then part.CanCollide = false end 
         end
         
-        -- Bắt đầu vòng lặp Teleport mỗi Frame (Sử dụng Heartbeat để mượt nhất)
         LoopTPConnection = RS.Heartbeat:Connect(function()
             local currentHrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
             if currentHrp and SavedPosition then
                 currentHrp.CFrame = SavedPosition
-                currentHrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0) -- Triệt tiêu lực đẩy vật lý
+                currentHrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
             end
         end)
     end
 end)
 
-RS.Heartbeat:Connect(function()
+-- Quản lý chức năng Speed thông qua biến LoopSpeedConnection để dễ dàng tắt hẳn khi đóng Menu
+LoopSpeedConnection = RS.Heartbeat:Connect(function()
     if LP.Character and LP.Character:FindFirstChild("Humanoid") then
         local hum = LP.Character.Humanoid
         local hrp = LP.Character.HumanoidRootPart
