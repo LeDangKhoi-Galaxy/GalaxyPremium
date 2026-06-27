@@ -5,13 +5,9 @@ local TS = game:GetService("TweenService")
 local StarterGui = game:GetService("StarterGui")
 
 -- [BIẾN HỆ THỐNG]
--- Đảm bảo ResetOnSpawn = false để menu không mất khi chết
-local G = Instance.new("ScreenGui", LP:WaitForChild("PlayerGui"))
-G.Name = "GalaxyMini_"..math.random(1000,9999)
-G.ResetOnSpawn = false 
-
+local G = Instance.new("ScreenGui", LP:WaitForChild("PlayerGui")); G.Name = "GalaxyMini_"..math.random(1000,9999)
 local SavedPosition = nil
-local CurrentTween = nil
+local LoopTPConnection = nil -- Biến quản lý vòng lặp dịch chuyển
 local SpeedVal = 25 
 
 local function Notify(msg)
@@ -24,17 +20,21 @@ local Stroke = Instance.new("UIStroke", MainFrame); Stroke.Color = Color3.fromRG
 
 local Title = Instance.new("TextLabel", MainFrame); Title.Size = UDim2.new(1, 0, 0, 40); Title.Text = "GALAXY Mini"; Title.TextColor3 = Color3.fromRGB(255,0,0); Title.BackgroundTransparency = 1; Title.Font = Enum.Font.GothamBold; Title.TextSize = 20
 local CloseBtn = Instance.new("TextButton", MainFrame); CloseBtn.Size = UDim2.new(0, 40, 0, 40); CloseBtn.Position = UDim2.new(1, -40, 0, 0); CloseBtn.Text = "X"; CloseBtn.TextColor3 = Color3.fromRGB(255,0,0); CloseBtn.BackgroundColor3 = Color3.fromRGB(30,0,0); CloseBtn.Font = Enum.Font.SourceSansBold; CloseBtn.TextSize = 20
-CloseBtn.MouseButton1Click:Connect(function() G:Destroy() end)
+CloseBtn.MouseButton1Click:Connect(function() 
+    if LoopTPConnection then LoopTPConnection:Disconnect() end
+    G:Destroy() 
+end)
 
 local function CreateBtn(name, y)
-    local b = Instance.new("TextButton", MainFrame); b.Size = UDim2.new(1, -20, 0, 45); b.Position = UDim2.new(0, 10, 0, y); b.BackgroundColor3 = Color3.fromRGB(20,20,20); b.Text = name; b.TextColor3 = Color3.fromRGB(255,0,0); b.Font = Enum.Font.GothamBold; b.TextSize = 18
+    local b = Instance.new("TextButton", MainFrame); b.Size = UDim2.new(1, -20, 0, 45); b.Position = UDim2.new(0, 10, 0, y); b.BackgroundColor3 = Color3.fromRGB(20,20,20); b.Text = name; b.TextColor3 = Color3.fromRGB(255,0,0); b.Font = Enum.Font.GothamBold; b.TextSize = 16
     Instance.new("UIStroke", b).Color = Color3.fromRGB(150,0,0)
     return b
 end
 
 local SaveBtn = CreateBtn("LƯU VỊ TRÍ", 50)
-local FlyBtn = CreateBtn("BAY ĐẾN VỊ TRÍ", 100)
+local FlyBtn = CreateBtn("LOOP TELEPORT: TẮT", 100) -- Đổi tên nút để phù hợp chức năng mới
 
+-- [Ô NHẬP TỐC ĐỘ]
 local SpeedInput = Instance.new("TextBox", MainFrame)
 SpeedInput.Size = UDim2.new(1, -20, 0, 45); SpeedInput.Position = UDim2.new(0, 10, 0, 155)
 SpeedInput.BackgroundColor3 = Color3.fromRGB(20, 20, 20); SpeedInput.PlaceholderText = "Nhập tốc độ..."; SpeedInput.Text = tostring(SpeedVal)
@@ -52,38 +52,59 @@ end)
 SaveBtn.MouseButton1Click:Connect(function()
     if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
         SavedPosition = LP.Character.HumanoidRootPart.CFrame
-        Notify("Đã lưu!")
+        Notify("Đã lưu vị trí!")
     end
 end)
 
+-- Thay đổi logic thành LOOP Teleport liên tục
 FlyBtn.MouseButton1Click:Connect(function()
-    if CurrentTween then CurrentTween:Cancel(); CurrentTween = nil; FlyBtn.Text = "BAY ĐẾN VỊ TRÍ"; return end
-    if not SavedPosition then Notify("Chưa có vị trí!"); return end
-    local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        for _, part in pairs(LP.Character:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = false end end
-        local dist = (hrp.Position - SavedPosition.Position).Magnitude
-        CurrentTween = TS:Create(hrp, TweenInfo.new(dist/173, Enum.EasingStyle.Linear), {CFrame = SavedPosition})
-        FlyBtn.Text = "DỪNG BAY"
-        CurrentTween.Completed:Connect(function() 
-            CurrentTween = nil; FlyBtn.Text = "BAY ĐẾN VỊ TRÍ"
-            for _, part in pairs(LP.Character:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide = true end end
-        end)
-        CurrentTween:Play()
-    end
-end)
-
--- [SPEED BYPASS LUÔN CHẠY]
--- Sử dụng pcall để tránh lỗi khi nhân vật chưa hồi sinh xong
-RS.Heartbeat:Connect(function()
-    pcall(function()
-        if LP.Character and LP.Character:FindFirstChild("Humanoid") and LP.Character:FindFirstChild("HumanoidRootPart") then
-            local hum = LP.Character.Humanoid
-            local hrp = LP.Character.HumanoidRootPart
-            hum.WalkSpeed = 16
-            if hum.MoveDirection.Magnitude > 0 then
-                hrp.AssemblyLinearVelocity = Vector3.new(hum.MoveDirection.X * SpeedVal, hrp.AssemblyLinearVelocity.Y, hum.MoveDirection.Z * SpeedVal)
+    -- Nếu đang bật thì bấm vào sẽ TẮT
+    if LoopTPConnection then 
+        LoopTPConnection:Disconnect()
+        LoopTPConnection = nil
+        FlyBtn.Text = "TP"
+        FlyBtn.TextColor3 = Color3.fromRGB(255, 0, 0)
+        
+        -- Bật lại va chạm cho nhân vật
+        if LP.Character then
+            for _, part in pairs(LP.Character:GetDescendants()) do 
+                if part:IsA("BasePart") then part.CanCollide = true end 
             end
         end
-    end)
+        return 
+    end
+    
+    -- Kiểm tra nếu chưa lưu vị trí
+    if not SavedPosition then Notify("Chưa có vị trí!"); return end
+    
+    local hrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+    if hrp then
+        FlyBtn.Text = "DỪNG TP"
+        FlyBtn.TextColor3 = Color3.fromRGB(0, 255, 0) -- Đổi màu xanh khi đang bật
+        
+        -- Tắt va chạm để tránh bị lỗi kẹt map khi dịch chuyển liên tục
+        for _, part in pairs(LP.Character:GetDescendants()) do 
+            if part:IsA("BasePart") then part.CanCollide = false end 
+        end
+        
+        -- Bắt đầu vòng lặp Teleport mỗi Frame (Sử dụng Heartbeat để mượt nhất)
+        LoopTPConnection = RS.Heartbeat:Connect(function()
+            local currentHrp = LP.Character and LP.Character:FindFirstChild("HumanoidRootPart")
+            if currentHrp and SavedPosition then
+                currentHrp.CFrame = SavedPosition
+                currentHrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0) -- Triệt tiêu lực đẩy vật lý
+            end
+        end)
+    end
+end)
+
+RS.Heartbeat:Connect(function()
+    if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+        local hum = LP.Character.Humanoid
+        local hrp = LP.Character.HumanoidRootPart
+        hum.WalkSpeed = 16
+        if hum.MoveDirection.Magnitude > 0 then
+            hrp.AssemblyLinearVelocity = Vector3.new(hum.MoveDirection.X * SpeedVal, hrp.AssemblyLinearVelocity.Y, hum.MoveDirection.Z * SpeedVal)
+        end
+    end
 end)
