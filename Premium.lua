@@ -4,15 +4,16 @@ local RS = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
 
 -- [BIẾN HỆ THỐNG]
+-- Tạo ScreenGui trực tiếp trong PlayerGui và tắt ResetOnSpawn để không bị mất khi reset nhân vật
 local PlayerGui = LP:WaitForChild("PlayerGui")
 local G = Instance.new("ScreenGui")
 G.Name = "GalaxyMini_"..math.random(1000,9999)
-G.ResetOnSpawn = false
+G.ResetOnSpawn = false -- Giữ giao diện khi chết hoặc hồi sinh
 G.Parent = PlayerGui
 
 local SavedPosition = nil
-local LoopTPConnection = nil 
-local LoopSpeedConnection = nil 
+local LoopTPConnection = nil -- Biến quản lý vòng lặp dịch chuyển
+local LoopSpeedConnection = nil -- Biến quản lý vòng lặp tốc độ
 local SpeedVal = 25 
 
 local function Notify(msg)
@@ -26,16 +27,10 @@ local Stroke = Instance.new("UIStroke", MainFrame); Stroke.Color = Color3.fromRG
 local Title = Instance.new("TextLabel", MainFrame); Title.Size = UDim2.new(1, 0, 0, 40); Title.Text = "GALAXY Mini"; Title.TextColor3 = Color3.fromRGB(255,0,0); Title.BackgroundTransparency = 1; Title.Font = Enum.Font.GothamBold; Title.TextSize = 20
 local CloseBtn = Instance.new("TextButton", MainFrame); CloseBtn.Size = UDim2.new(0, 40, 0, 40); CloseBtn.Position = UDim2.new(1, -40, 0, 0); CloseBtn.Text = "X"; CloseBtn.TextColor3 = Color3.fromRGB(255,0,0); CloseBtn.BackgroundColor3 = Color3.fromRGB(30,0,0); CloseBtn.Font = Enum.Font.SourceSansBold; CloseBtn.TextSize = 20
 
+-- Khi nhấn nút X: Tắt tất cả Loop trước khi xóa GUI
 CloseBtn.MouseButton1Click:Connect(function() 
     if LoopTPConnection then LoopTPConnection:Disconnect(); LoopTPConnection = nil end
     if LoopSpeedConnection then LoopSpeedConnection:Disconnect(); LoopSpeedConnection = nil end
-    
-    pcall(function()
-        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-            LP.Character.Humanoid.WalkSpeed = 16
-        end
-    end)
-    
     G:Destroy() 
 end)
 
@@ -46,7 +41,7 @@ local function CreateBtn(name, y)
 end
 
 local SaveBtn = CreateBtn("LƯU VỊ TRÍ", 50)
-local FlyBtn = CreateBtn("TP", 100)
+local FlyBtn = CreateBtn("TP, 100)
 
 -- [Ô NHẬP TỐC ĐỘ]
 local SpeedInput = Instance.new("TextBox", MainFrame)
@@ -62,7 +57,7 @@ SpeedInput.FocusLost:Connect(function(enterPressed)
     end
 end)
 
--- [CHỨC NĂNG - LOOP TELEPORT]
+-- [CHỨC NĂNG]
 SaveBtn.MouseButton1Click:Connect(function()
     if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
         SavedPosition = LP.Character.HumanoidRootPart.CFrame
@@ -106,11 +101,14 @@ FlyBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- [CHỨC NĂNG - LOOP SPEED]
+-- Quản lý chức năng Speed thông qua biến LoopSpeedConnection để dễ dàng tắt hẳn khi đóng Menu
 LoopSpeedConnection = RS.Heartbeat:Connect(function()
-    pcall(function()
-        if LP.Character and LP.Character:FindFirstChild("Humanoid") then
-            LP.Character.Humanoid.WalkSpeed = SpeedVal
+    if LP.Character and LP.Character:FindFirstChild("Humanoid") then
+        local hum = LP.Character.Humanoid
+        local hrp = LP.Character.HumanoidRootPart
+        hum.WalkSpeed = 16
+        if hum.MoveDirection.Magnitude > 0 then
+            hrp.AssemblyLinearVelocity = Vector3.new(hum.MoveDirection.X * SpeedVal, hrp.AssemblyLinearVelocity.Y, hum.MoveDirection.Z * SpeedVal)
         end
-    end)
+    end
 end)
