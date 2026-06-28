@@ -41,7 +41,7 @@ local function CreateBtn(name, y)
 end
 
 local SaveBtn = CreateBtn("LƯU VỊ TRÍ", 50)
-local FlyBtn = CreateBtn("TP, 100)
+local FlyBtn = CreateBtn("TP", 100)
 
 -- [Ô NHẬP TỐC ĐỘ]
 local SpeedInput = Instance.new("TextBox", MainFrame)
